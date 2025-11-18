@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     # Project Apps
     'auths.user',
     'apps.api',
+    'apps.daily',
     # Modules
     'rest_framework',
     'drf_spectacular',
