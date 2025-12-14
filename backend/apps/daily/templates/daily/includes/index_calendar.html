@@ -1,0 +1,43 @@
+{% load static %}
+
+<div class="card border-secondary shadow-sm">
+    <div class="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center">
+        <span class="text-secondary text-uppercase small ls-1">System Log</span>
+        <span class="fw-bold text-system">{{ j_today|date:"F Y" }}</span> </div>
+    <div class="card-body">
+        
+        <div class="d-flex text-center mb-2">
+            <div class="flex-fill text-muted small">Sat</div>
+            <div class="flex-fill text-muted small">Sun</div>
+            <div class="flex-fill text-muted small">Mon</div>
+            <div class="flex-fill text-muted small">Tue</div>
+            <div class="flex-fill text-muted small">Wed</div>
+            <div class="flex-fill text-muted small">Thu</div>
+            <div class="flex-fill text-danger small">Fri</div>
+        </div>
+
+        <div class="d-flex flex-wrap text-center">
+            {% for day_info in calendar_days %}
+                <div style="width: 14.28%; height: 50px; padding: 2px;">
+                    {% if day_info %}
+                        <div class="h-100 rounded d-flex flex-column justify-content-center align-items-center position-relative
+                            {% if day_info.is_today %} border border-system bg-system-soft
+                            {% elif day_info.has_log %} bg-success opacity-75
+                            {% else %} bg-dark border border-secondary text-secondary
+                            {% endif %}"
+                        >
+                            <span class="small fw-bold">{{ day_info.day }}</span>
+                            
+                            {% if day_info.has_log %}
+                                <span class="position-absolute bottom-0 mb-1 rounded-circle bg-white" style="width: 4px; height: 4px;"></span>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="h-100"></div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+        
+    </div>
+</div>
