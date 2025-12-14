@@ -1,0 +1,50 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-dark mb-4 sticky-top" style="background-color: var(--apex-bg-card); border-bottom: 1px solid var(--apex-border);">
+    <div class="container">
+        <a class="navbar-brand fw-bold text-system d-flex align-items-center" href="{% url 'daily:index' %}">
+            <span class="me-2">🚀</span> 
+            APEX Program 
+            <span class="badge bg-system-soft text-system ms-2 fs-7" style="font-size: 0.7rem;">v1.0</span>
+        </a>
+
+        <button class="navbar-toggler border-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#apexNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="apexNavbar">
+            <ul class="navbar-nav ms-auto align-items-center">
+                
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active fw-bold text-white{% endif %}" 
+                       href="{% url 'daily:index' %}">
+                        STATUS WINDOW
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-3">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active fw-bold text-white{% endif %}" 
+                       href="{% url 'daily:dashboard' %}">
+                        DUNGEON (DAILY)
+                    </a>
+                </li>
+
+                <li class="nav-item d-none d-lg-block mx-3 text-secondary">|</li>
+
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                        <span class="text-secondary me-2">Candidate</span>
+                        <span class="fw-bold text-white">{{ user.username }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary shadow-lg">
+                        <li><a class="dropdown-item" href="#">⚙️ Settings</a></li>
+                        <li><hr class="dropdown-divider border-secondary"></li>
+                        <li><a class="dropdown-item text-danger" href="#">🚪 Log Out</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
