@@ -40,3 +40,32 @@ def daily_dashboard(request):
         'today': today,
     }
     return render(request, 'daily/dashboard.html', context)
+
+def index(request):
+    """
+    The 'Status Window' (Main Home Page).
+    Displays player level, stats, and a link to today's dashboard.
+    """
+    today = timezone.now().date()
+    
+    # Check if the "Dungeon" (DayPage) is already opened today
+    # We use filter().exists() because it's faster than get() for simple checks
+    has_daily_log = DayPage.objects.filter(user=request.user, date=today).exists()
+    
+    # --- PROVISIONAL STATS (We will make these real later) ---
+    player_stats = {
+        "level": 5,
+        "rank": "E-Rank",
+        "job": "None",
+        "xp_current": 450,
+        "xp_max": 1000,
+        "xp_percent": 45,
+        "streak": 3,
+    }
+
+    context = {
+        "today": today,
+        "has_daily_log": has_daily_log,
+        "stats": player_stats,
+    }
+    return render(request, 'daily/index.html', context)
