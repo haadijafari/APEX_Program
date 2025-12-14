@@ -7,11 +7,11 @@
             Complete your daily routine to earn XP and avoid penalty.
         </p>
         
-        <a href="{% url 'daily:dashboard' %}" class="btn btn-outline-primary border-system text-system fw-bold py-2 w-100">
+        <a href="{% url 'daily:gate' %}" class="btn btn-outline-primary border-system text-system fw-bold py-2 w-100">
             {% if has_daily_log %}
-                CONTINUE QUEST ⚔️
+                CONTINUE RAID ⚔️
             {% else %}
-                ENTER DUNGEON ☠️
+                ENTER GATE 🌀
             {% endif %}
         </a>
     </div>
