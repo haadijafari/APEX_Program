@@ -23,11 +23,13 @@ MIDDLEWARE += [
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
-STATIC_ROOT = BASE_DIR / 'static'
+# (Django will create this folder automatically when you run collectstatic)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 STATICFILES_DIRS = [
     # BASE_DIR / "apps/frontend/next/src",
+    BASE_DIR / 'static',
 ]
 
 # reCaptcha

@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -6,30 +8,9 @@
     <title>Apex Program</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="{% static 'css/main.css' %}" rel="stylesheet">
 
-    <style>
-        /* Solo Leveling Blue/Black Aesthetic */
-        :root {
-            --bs-body-bg: #121212;
-            --bs-card-bg: #1e1e1e;
-            --sl-blue: #00a8ff; /* The glowing blue system color */
-        }
-        .text-system { color: var(--sl-blue); }
-        .border-system { border-color: var(--sl-blue) !important; }
-        .bg-system { background-color: var(--sl-blue); }
-        
-        /* Card Hover Effects */
-        .card {
-            transition: transform 0.2s;
-            border: 1px solid #333;
-        }
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: #555;
-        }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 

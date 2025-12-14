@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="row g-4">
@@ -91,39 +92,16 @@
     </div>
 </div>
 
+<script src="{% static 'js/stats.js' %}"></script>
+
 <script>
-    // Simple Chart.js Config for the Radar Chart
-    const ctx = document.getElementById('statsChart');
-    
-    new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: {{ stat_labels|safe }},
-            datasets: [{
-                label: 'Player Stats',
-                data: {{ stat_values|safe }},
-                fill: true,
-                backgroundColor: 'rgba(0, 168, 255, 0.2)',
-                borderColor: '#00a8ff',
-                pointBackgroundColor: '#00a8ff',
-                pointBorderColor: '#fff',
-                pointHoverBackgroundColor: '#fff',
-                pointHoverBorderColor: '#00a8ff'
-            }]
-        },
-        options: {
-            scales: {
-                r: {
-                    angleLines: { color: '#333' },
-                    grid: { color: '#333' },
-                    pointLabels: { color: '#aaa' },
-                    ticks: { display: false, backdropColor: 'transparent' }
-                }
-            },
-            plugins: {
-                legend: { display: false }
-            }
-        }
+    document.addEventListener('DOMContentLoaded', function() {
+        // We pass the Django variables into the function here
+        const labels = {{ stat_labels|safe }};
+        const values = {{ stat_values|safe }};
+        
+        renderStatsChart(labels, values);
     });
 </script>
+
 {% endblock %}
