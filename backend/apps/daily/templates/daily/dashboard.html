@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h1 class="display-6 fw-bold text-uppercase">{{ today|date:"l, F jS" }}</h1>
+            <p class="text-muted">Status: <span class="badge bg-primary">Level 1 - Novice</span></p> </div>
+        <div class="col-auto">
+             <button type="submit" form="dayPageForm" class="btn btn-success btn-lg px-4">Save Progress 💾</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <form method="POST" id="dayPageForm">
+                {% csrf_token %}
+                
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light fw-bold">Daily Metrics</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Wake Up</label>
+                                {{ form.wake_up_time }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sleep Time</label>
+                                {{ form.sleep_time }}
+                            </div>
+                             <div class="col-md-3">
+                                <label class="form-label">Score (1-10)</label>
+                                {{ form.rating }}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Mood</label>
+                                {{ form.emoji }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Event / Focus</label>
+                                {{ form.event }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <label class="fw-bold text-primary">Quote of the Day</label>
+                                {{ form.quote }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <label class="fw-bold text-info">Lesson of the Day</label>
+                                {{ form.lesson_of_day }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold text-success">Positive Highlights</label>
+                        {{ form.positives }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold text-danger">Negative / Improve</label>
+                        {{ form.negatives }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold text-warning">Financial Notes</label>
+                        {{ form.financial_notes }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold text-secondary">Notes for Tomorrow</label>
+                        {{ form.notes_tomorrow }}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-4">
+            <h4 class="mb-3 text-muted">Active Routines</h4>
+            {% for routine in routines %}
+                <div class="card mb-3 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom-0 fw-bold">
+                        {{ routine.name }}
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for item in routine.routine_items.all %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" value="" id="item{{item.id}}">
+                                <label class="form-check-label stretched-link" for="item{{item.id}}">
+                                    {{ item.title }}
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% empty %}
+                <div class="alert alert-info">No routines set up yet!</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
