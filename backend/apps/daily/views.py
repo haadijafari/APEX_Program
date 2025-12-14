@@ -54,6 +54,13 @@ def index(request):
     
     # Get the profile safely (create it if it doesn't exist for old users)
     profile, created = PlayerProfile.objects.get_or_create(user=request.user)
+    # Fetch all attributes for the chart
+    attributes = request.user.attributes.all()
+
+    # Prepare data for Chart.js
+    # We need two lists: labels (names) and data (values)
+    stat_labels = [attr.name for attr in attributes] 
+    stat_values = [attr.value for attr in attributes]
 
     # Calculate Streak (Simple version: Count total DayPages)
     # Later we can make this 'consecutive days'
@@ -62,7 +69,9 @@ def index(request):
     context = {
         "today": today,
         "has_daily_log": has_daily_log,
-        "profile": profile,       # Pass the real DB object
+        "profile": profile,
+        "stat_labels": stat_labels,
+        "stat_values": stat_values,
         "streak": streak_count,
     }
     return render(request, 'daily/index.html', context)

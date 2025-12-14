@@ -11,8 +11,8 @@ class User(AbstractUser):
 
 class PlayerProfile(models.Model):
     """
-    The RPG stats for the User.
-    Now located inside the auths app for better cohesion.
+    Holds the 'Meta' stats: Level, Rank, Gold, Job.
+    Attributes are now in a separate model.
     """
     
     class Rank(models.TextChoices):
@@ -44,19 +44,10 @@ class PlayerProfile(models.Model):
     job_class = models.CharField(
         max_length=50, 
         default="None",
-        help_text=_("e.g. Assassin, Necromancer, Mage")
+        help_text=_("e.g. Shadow Monarch, Developer, Artist")
     )
 
-    # --- The 6 Attributes (Hexagon Stats) ---
-    strength = models.PositiveIntegerField(default=10, verbose_name="STR")
-    agility = models.PositiveIntegerField(default=10, verbose_name="AGI")
-    intellect = models.PositiveIntegerField(default=10, verbose_name="INT")
-    vitality = models.PositiveIntegerField(default=10, verbose_name="VIT")
-    perception = models.PositiveIntegerField(default=10, verbose_name="PER")
-    luck = models.PositiveIntegerField(default=10, verbose_name="LUK")
-
-    # --- Economy ---
-    gold = models.PositiveIntegerField(default=0, help_text=_("Currency earned from tasks"))
+    gold = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return f"Level {self.level} | {self.user.username}"
@@ -70,11 +61,52 @@ class PlayerProfile(models.Model):
         if self.xp_max == 0: return 0
         return min(100, int((self.xp_current / self.xp_max) * 100))
 
-# --- Signals (Auto-create profile) ---
+
+class UserAttribute(models.Model):
+    """
+    Dynamic stats. The user can have 'Strength', 'Python', 'Charisma', etc.
+    """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='attributes'
+    )
+    
+    name = models.CharField(max_length=50) # e.g. "Intellect"
+    value = models.PositiveIntegerField(default=10)
+    description = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        unique_together = ['user', 'name'] # Can't have two "Strength" stats
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+
+
+# --- Signals ---
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
+        # 1. Create the Profile
         PlayerProfile.objects.create(user=instance)
+        
+        # 2. Create Default "Owj" Attributes (Optional starter pack) - Solo Leveling Inspired
+        default_stats = [
+            ("Physic", "Physical and Health Status"),
+            ("Discipline", "Consistency, Routine adherence, and Focus"),
+            ("Intellect", "Education, Knowledge, and Wisdom"),
+            ("Creativity", "Startups, Brand, Music, Art"),
+            ("Charisma", "Critical hit chance"),
+        ]
+        
+        for stat_name, desc in default_stats:
+            UserAttribute.objects.create(
+                user=instance,
+                name=stat_name,
+                value=10,
+                description=desc
+            )
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):

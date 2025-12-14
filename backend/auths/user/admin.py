@@ -1,38 +1,27 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, PlayerProfile
+from .models import User, PlayerProfile, UserAttribute
 
 class PlayerProfileInline(admin.StackedInline):
-    """
-    Embeds the PlayerProfile form into the User form.
-    """
+    """Shows Level/Rank/Gold"""
     model = PlayerProfile
     can_delete = False
     verbose_name_plural = 'Player Status'
     fk_name = 'user'
-    
-    # Group stats into fieldsets for cleaner UI
-    fieldsets = (
-        ("Rank & Level", {
-            "fields": ("level", "xp_current", "rank", "job_class", "gold")
-        }),
-        ("Attributes", {
-            "fields": (
-                ("strength", "agility", "intellect"),
-                ("vitality", "perception", "luck")
-            )
-        }),
-    )
+
+class UserAttributeInline(admin.TabularInline):
+    """Shows the dynamic list of stats (Strength, Python, etc.)"""
+    model = UserAttribute
+    extra = 1 # Allows adding 1 new stat easily
+    verbose_name = "Attribute"
+    verbose_name_plural = "Player Attributes (Stats)"
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """
-    The unified Admin view.
-    """
-    inlines = (PlayerProfileInline,)
+    # Add both inlines
+    inlines = (PlayerProfileInline, UserAttributeInline)
     
-    # Optional: Add Level/Rank to the list view columns
-    list_display = ('username', 'email', 'get_level', 'get_rank', 'is_staff')
+    list_display = ('username', 'get_level', 'get_rank', 'is_staff')
 
     def get_level(self, obj):
         return obj.profile.level

@@ -7,28 +7,28 @@
         <div class="card mb-3">
             <div class="card-body">
                 <h5 class="text-muted text-uppercase small mb-1">Player Name</h5>
-                <h2 class="fw-bold mb-0">{{ user.username }}</h2>
+                <h2 class="fw-bold mb-0">{{ user.get_full_name }}</h2>
                 <hr class="border-secondary">
                 
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">Level</span>
-                    <span class="fw-bold text-system">{{ stats.level }}</span>
+                    <span class="fw-bold text-system">{{ profile.level }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Class</span>
-                    <span class="fw-bold">{{ stats.job }}</span>
+                    <span class="text-muted">Job Class</span>
+                    <span class="fw-bold">{{ profile.job_class }}</span>
                 </div>
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-muted">Rank</span>
-                    <span class="fw-bold text-white">{{ stats.rank }}</span>
+                    <span class="fw-bold text-white">{{ profile.rank }}</span>
                 </div>
 
                 <div class="d-flex justify-content-between small mb-1">
                     <span>XP</span>
-                    <span>{{ stats.xp_current }} / {{ stats.xp_max }}</span>
+                    <span>{{ profile.xp_current }} / {{ profile.xp_max }}</span>
                 </div>
                 <div class="progress" role="progressbar" style="height: 10px; background-color: #333;">
-                    <div class="progress-bar bg-system" style="width: {{ stats.xp_percent }}%"></div>
+                    <div class="progress-bar bg-system" style="width: {{ profile.xp_percent }}%"></div>
                 </div>
             </div>
         </div>
@@ -69,7 +69,7 @@
                 <div class="card mb-3">
                     <div class="card-body text-center">
                         <h6 class="text-muted text-uppercase small">Log Streak</h6>
-                        <h1 class="display-4 fw-bold text-white mb-0">🔥 {{ stats.streak }}</h1>
+                        <h1 class="display-4 fw-bold text-white mb-0">🔥 {{ streak }}</h1>
                         <small class="text-muted">Days</small>
                     </div>
                 </div>
@@ -98,17 +98,10 @@
     new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['STR', 'AGI', 'INT', 'VIT', 'PER', 'LUK'],
+            labels: {{ stat_labels|safe }},
             datasets: [{
                 label: 'Player Stats',
-                data: [
-                    {{ profile.strength }}, 
-                    {{ profile.agility }}, 
-                    {{ profile.intellect }}, 
-                    {{ profile.vitality }}, 
-                    {{ profile.perception }}, 
-                    {{ profile.luck }}
-                ],
+                data: {{ stat_values|safe }},
                 fill: true,
                 backgroundColor: 'rgba(0, 168, 255, 0.2)',
                 borderColor: '#00a8ff',
