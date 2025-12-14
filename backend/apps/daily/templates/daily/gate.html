@@ -1,115 +1,26 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/gate.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     
-    <div class="row mb-4 align-items-center">
-        <div class="col">
-            <h1 class="display-6 fw-bold text-uppercase text-system">{{ today|date:"l, F jS" }}</h1>
-            <p class="text-secondary">Status: <span class="badge bg-system">Level 1 - Novice</span></p> 
-        </div>
-        <div class="col-auto">
-             <button type="submit" form="dayPageForm" class="btn btn-success btn-lg px-4 fw-bold shadow">Save Progress 💾</button>
-        </div>
-    </div>
+    {% include 'daily/includes/gate_header.html' %}
 
     <div class="row">
-        <div class="col-md-8">
-            <form method="POST" id="dayPageForm">
-                {% csrf_token %}
-                
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header fw-bold text-uppercase small ls-1 border-secondary">
-                        Daily Metrics
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label text-muted small">Wake Up</label>
-                                {{ form.wake_up_time }}
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label text-muted small">Sleep Time</label>
-                                {{ form.sleep_time }}
-                            </div>
-                             <div class="col-md-3">
-                                <label class="form-label text-muted small">Score (1-10)</label>
-                                {{ form.rating }}
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label text-muted small">Mood</label>
-                                {{ form.emoji }}
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label text-muted small">Event / Focus</label>
-                                {{ form.event }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 border-system">
-                            <div class="card-body">
-                                <label class="fw-bold text-system mb-2">Quote of the Day</label>
-                                {{ form.quote }}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 border-info">
-                            <div class="card-body">
-                                <label class="fw-bold text-info mb-2">Lesson of the Day</label>
-                                {{ form.lesson_of_day }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-success">Positive Highlights</label>
-                        {{ form.positives }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-danger">Negative / Improve</label>
-                        {{ form.negatives }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-warning">Financial Notes</label>
-                        {{ form.financial_notes }}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold text-secondary">Notes for Tomorrow</label>
-                        {{ form.notes_tomorrow }}
-                    </div>
-                </div>
-            </form>
+        <div class="col-lg-8">
+            {% include 'daily/includes/gate_form_main.html' %}
         </div>
 
         <div class="col-md-4">
-            <h4 class="mb-3 text-muted">Active Routines</h4>
-            {% for routine in routines %}
-                <div class="card mb-3 border-secondary shadow-sm">
-                    <div class="card-header fw-bold border-secondary">
-                        {{ routine.name }}
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        {% for item in routine.routine_items.all %}
-                            <li class="list-group-item d-flex align-items-center">
-                                <input class="form-check-input me-2" type="checkbox" value="" id="item{{item.id}}">
-                                <label class="form-check-label stretched-link text-reset" for="item{{item.id}}">
-                                    {{ item.title }}
-                                </label>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% empty %}
-                <div class="alert alert-info">No routines set up yet!</div>
-            {% endfor %}
+            {% include 'daily/includes/gate_routines.html' %}
         </div>
     </div>
 </div>
+
+<script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+<script src="{% static 'js/gate.js' %}"></script>
 {% endblock %}

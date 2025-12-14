@@ -33,15 +33,20 @@ class DayPage(models.Model):
     )
 
     # --- Metrics ---
+    # Usually filled in the next morning or late at night
+    sleep_time = models.TimeField(
+        blank=True, null=True,
+        verbose_name=_("Last Night Sleep Time")
+    )
+
     wake_up_time = models.TimeField(
         blank=True, null=True,
         verbose_name=_("Wake Up Time")
     )
-    
-    # Usually filled in the next morning or late at night
-    sleep_time = models.TimeField(
-        blank=True, null=True,
-        verbose_name=_("Sleep Time")
+
+    nap_duration = models.FloatField(
+        default=0.0, 
+        help_text="Duration in hours (e.g. 0.5 for 30 mins)"
     )
 
     # --- Content & Inspiration ---

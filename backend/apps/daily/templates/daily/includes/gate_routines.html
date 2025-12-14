@@ -1,0 +1,20 @@
+<h4 class="mb-3 text-muted">Active Routines</h4>
+{% for routine in routines %}
+    <div class="card mb-3 border-secondary shadow-sm">
+        <div class="card-header fw-bold border-secondary">
+            {{ routine.name }}
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for item in routine.routine_items.all %}
+                <li class="list-group-item d-flex align-items-center">
+                    <input class="form-check-input me-2" type="checkbox" value="" id="item{{item.id}}">
+                    <label class="form-check-label stretched-link text-reset" for="item{{item.id}}">
+                        {{ item.title }}
+                    </label>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% empty %}
+    <div class="alert alert-info">No routines set up yet!</div>
+{% endfor %}

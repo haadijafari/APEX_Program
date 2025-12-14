@@ -1,3 +1,4 @@
+import jdatetime
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -14,6 +15,8 @@ def gate_view(request):
     Handles the DayPage form and Routine display.
     """
     today = timezone.now().date()
+    j_date = jdatetime.date.fromgregorian(date=today)
+    jalali_date_str = j_date.strftime("%A, %d %B %Y")
     
     # Get or Create the page for today
     day_page, created = DayPage.objects.get_or_create(
@@ -41,5 +44,6 @@ def gate_view(request):
         'form': form,
         'routines': routines,
         'today': today,
+        'jalali_date_str': jalali_date_str,
     }
     return render(request, 'daily/gate.html', context)
