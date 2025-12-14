@@ -101,7 +101,14 @@
             labels: ['STR', 'AGI', 'INT', 'VIT', 'PER', 'LUK'],
             datasets: [{
                 label: 'Player Stats',
-                data: [65, 59, 90, 81, 56, 55],
+                data: [
+                    {{ profile.strength }}, 
+                    {{ profile.agility }}, 
+                    {{ profile.intellect }}, 
+                    {{ profile.vitality }}, 
+                    {{ profile.perception }}, 
+                    {{ profile.luck }}
+                ],
                 fill: true,
                 backgroundColor: 'rgba(0, 168, 255, 0.2)',
                 borderColor: '#00a8ff',

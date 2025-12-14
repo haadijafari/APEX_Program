@@ -5,6 +5,8 @@ from apps.daily.models.model_daypage import DayPage
 from .models.model_routine import Routine
 from .forms import DayPageForm
 
+from auths.user.models import PlayerProfile
+
 @login_required
 def daily_dashboard(request):
     """
@@ -41,31 +43,26 @@ def daily_dashboard(request):
     }
     return render(request, 'daily/dashboard.html', context)
 
+@login_required
 def index(request):
     """
     The 'Status Window' (Main Home Page).
-    Displays player level, stats, and a link to today's dashboard.
+    Fetches real player stats from the database.
     """
     today = timezone.now().date()
-    
-    # Check if the "Dungeon" (DayPage) is already opened today
-    # We use filter().exists() because it's faster than get() for simple checks
     has_daily_log = DayPage.objects.filter(user=request.user, date=today).exists()
     
-    # --- PROVISIONAL STATS (We will make these real later) ---
-    player_stats = {
-        "level": 5,
-        "rank": "E-Rank",
-        "job": "None",
-        "xp_current": 450,
-        "xp_max": 1000,
-        "xp_percent": 45,
-        "streak": 3,
-    }
+    # Get the profile safely (create it if it doesn't exist for old users)
+    profile, created = PlayerProfile.objects.get_or_create(user=request.user)
+
+    # Calculate Streak (Simple version: Count total DayPages)
+    # Later we can make this 'consecutive days'
+    streak_count = DayPage.objects.filter(user=request.user).count()
 
     context = {
         "today": today,
         "has_daily_log": has_daily_log,
-        "stats": player_stats,
+        "profile": profile,       # Pass the real DB object
+        "streak": streak_count,
     }
     return render(request, 'daily/index.html', context)
