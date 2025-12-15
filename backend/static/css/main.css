@@ -71,7 +71,7 @@
 /* Navbar */
 .navbar {
     box-shadow: 0 2px 10px rgba(0,0,0,0.8);
-    background-color: rgba(var(--apex-primary-rgb), 0.4) !important; /* Subtle tint */
+    background-color: rgba(var(--apex-primary-rgb), 0.1) !important; /* Subtle tint */
     border-bottom: 1px solid var(--apex-border);
 }
 
