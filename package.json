@@ -1,0 +1,27 @@
+{
+  "name": "planner",
+  "version": "1.0.0",
+  "description": "This is an **Ultimate Planner Project** (using **UV python package manager**).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haadijafari/Planner.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/haadijafari/Planner/issues"
+  },
+  "homepage": "https://github.com/haadijafari/Planner#readme",
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.8",
+    "chart.js": "^4.5.1",
+    "emoji-picker-element": "^1.28.0",
+    "emoji-picker-element-data": "^1.8.0"
+  }
+}

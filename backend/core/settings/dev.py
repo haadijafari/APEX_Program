@@ -40,3 +40,7 @@ CORS_ALLOWED_ORIGINS = [
     # 'http://localhost:3000',
     # 'http://127.0.0.1:3000',
 ]
+
+# Tells WhiteNoise to search for files in your static folders during Dev
+# and serve them with the correct headers (ETags).
+WHITENOISE_USE_FINDERS = True

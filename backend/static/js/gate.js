@@ -68,6 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const picker = document.querySelector('emoji-picker');
 
     if (emojiInput && popover && picker && moodSlot) {
+
+        picker.dataSource = '/static/vendor/emoji-picker/data.json';
         
         // Toggle Picker on SLOT Click
         moodSlot.addEventListener('click', (e) => {
