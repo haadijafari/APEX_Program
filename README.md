@@ -1,29 +1,36 @@
 # Planner
 
-This is an **Ultimate Planner Project** (using **UV python package manager**).
+This is **APEX Program** (using **UV python package manager**).
+**Your Ultimate Planning and Daily System** to use for your life.
+Inspired by [Solo Leveling](https://www.imdb.com/title/tt21209876/)
 
 ![Planner](./Planner.avif)
 
 ## Features
 
-- Add and Track Your Routines
-- Track Your Habits
-- Track Your Sleep
-- Track Your Mood
-- Organize Your Daily Notes
-- Financial Management
-- Track Your Daily Studying
-- Track Your Goals
-- Develop Your Reading
-- Learn From Your Day
-- etc.
+- 🛡️ The Gate (Dashboard): A unified command center to track your daily timeline, biometrics, and active missions at a glance.
 
-## Tech Stack
+- ⚔️ Quest Board: Gamify your life by treating Habits and Routines as Ranked Quests (E-Rank to S-Rank) that award XP based on difficulty and fear.
 
-- **Backend:** Django, Django REST Framework
-- **BacFrontend:** HTML, CSS, Bootstrap
+- 🏰 Conquest System: Turn long-term goals into multi-stage Dungeons. Progress from "Scouting" to the final "Boss Fight" to clear major life milestones.
+
+- 🧠 Dynamic Stats: Watch your real-life attributes (Physique, Intellect, Charisma, Discipline, Psyche) level up as you complete relevant tasks.
+
+- 🎒 Inventory & Wealth: A dedicated system to track your assets, net worth ("Gold"), and consumables, separating your finances from your equipment.
+
+- 📚 The Library: An active reading tracker that logs pages read and time spent, directly feeding into your Intellect stat.
+
+- ❤️ Biometric Tracking: Monitor your Energy, Mood, and Sleep patterns to ensure your "Player Character" stays in peak condition.
+
+- 📜 Hunter’s Journal: A daily reflection system ("Wins" & "Lessons") that converts your daily experiences into Wisdom XP.
+
+## 🛠 Tech Stack
+
+- **Backend:** Python, Django 5.2, Django REST Framework
+- **BacFrontend:** Django Templates, Bootstrap 5, HTML5, CSS3, Vanilla JavaScript
 - **Database:** PostgreSQL
-- **Other:** Docker,Uv package manager, Shell
+- **DevOps & Infrastructure:** Docker, Docker Compose
+- **Tooling:** UV (Python Package Manager), Bash/Shell Scripts
 
 ## Setup
 
@@ -72,20 +79,61 @@ First install [uv package manager](https://docs.astral.sh/uv/getting-started/ins
    docker compose up --build
    ```
 
-## Project Structure
+## Project Architecture
 
-Brief overview of the main directories and their purposes.
+This project follows a Domain-Driven modular structure.
+Models and Admin configuration are split into packages.
 
 ```bash
-Template
-├── backend          # Django project
-├── compose.yaml     # Docker Compose file
-├── dockerfiles      # Docker files
-├── frontend         # frontend codes
-├── .env.example     ## .env.example file which must be
-│                    ## modified like mentioned in 'Setup'
-├── LICENSE
-└── README.md
+APEX Program/
+├── backend/
+│   ├── apps/                         # GAMEPLAY DOMAINS
+│   │   ├── profiles/                 # App 1: Character Sheet
+│   │   │   ├── models/               # (Split: Profile, Stats, Titles)
+│   │   │   ├── admin/                # (Split: Modular Admin configs)
+│   │   │   ├── services.py           # XP & Leveling Logic
+│   │   │   └── signals.py            # Level Up Triggers
+│   │   │
+│   │   ├── gate/                     # App 2: Dashboard & Time
+│   │   │   ├── models/               # (Split: DailyEntry, Journal)
+│   │   │   └── utils.py              # Date conversion (Gregorian <-> Jalali)
+│   │   │
+│   │   ├── quests/                   # App 3: Action Engine
+│   │   │   ├── models/               # (Split: Task, Habit, Logs)
+│   │   │   └── services.py           # Rank Calculation Algorithm
+│   │   │
+│   │   ├── inventory/                # App 4: Wealth & Assets
+│   │   │   ├── models/               # (Split: Wallet, Items, Finance)
+│   │   │   └── admin/
+│   │   │
+│   │   ├── library/                  # App 5: Knowledge System
+│   │   │   ├── models/               # (Split: Book, ReadingSession)
+│   │   │   ├── services.py           # Reading Stats Logic
+│   │   │   └── signals.py            # INT Stat Trigger
+│   │   │
+│   │   └── conquests/                # App 6: Story Mode
+│   │       ├── models/               # (Split: Dungeon, Arc, RedGate)
+│   │       └── services.py           # Boss Mode Logic
+│   │
+│   ├── auths/                        # IDENTITY
+│   │   └── user/                     # Custom User Model
+│   │
+│   ├── core/                         # CONFIGURATION
+│   │   ├── settings/                 # (base.py, dev.py, prod.py)
+│   │   ├── urls.py
+│   │   └── wsgi.py
+│   │
+│   ├── static/                       # ASSETS (css, js, vendor)
+│   ├── templates/                    # HTML (base.html, app folders)
+│   ├── entrypoint.sh
+│   ├── manage.py
+│   └── pyproject.toml
+│
+├── dockerfiles/                      # Docker Configs
+├── node_modules/                     # Frontend Dependencies
+├── compose.yaml
+├── package.json
+└── update_vendor.py                  # Script: Copy npm -> static
 ```
 
 ## Contributing

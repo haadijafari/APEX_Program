@@ -1,0 +1,165 @@
+## ------ Project Structure Schema ------ ##
+
+./APEX Program
+├── backend/
+│   ├── apps/                               # PROJECT LOGIC APPS (The System)
+│   │   ├── __init__.py
+│   │   ├── api/                            # Global API Configs (if needed)
+│   │   │
+│   │   ├── profiles/                       # APP 1: CHARACTER SHEET 
+│   │   │   │                               # (Player Stats & Titles)
+│   │   │   ├── __init__.py
+│   │   │   ├── apps.py
+│   │   │   ├── services.py                 # EXP & Leveling Logic
+│   │   │   ├── signals.py                  # Level Up Triggers
+│   │   │   ├── urls.py
+│   │   │   ├── admin/
+│   │   │   │   ├── __init__.py             # Must import all admins below!
+│   │   │   │   ├── admin_player_profile.py
+│   │   │   │   ├── admin_stats.py
+│   │   │   │   └── admin_titles.py
+│   │   │   └── models/
+│   │   │       ├── __init__.py             # Must import all models below!
+│   │   │       ├── model_player_profile.py
+│   │   │       ├── model_stats.py          # (Stats, PlayerStats)
+│   │   │       ├── model_titles.py         # (Titles, PlayerTitles)
+│   │   │       └── model_upgrade_log.py    # (StatUpgradeLog)
+│   │   │
+│   │   ├── gate/                           # APP 2: DASHBOARD (Daily Entries)
+│   │   │   ├── __init__.py
+│   │   │   ├── apps.py
+│   │   │   ├── utils.py                    # Date conversion (Gregorian <-> Jalali)
+│   │   │   ├── admin/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── admin_daily_entry.py
+│   │   │   │   └── admin_journal_log.py
+│   │   │   └── models/
+│   │   │       ├── __init__.py
+│   │   │       ├── model_daily_entry.py
+│   │   │       └── model_journal_log.py
+│   │   │
+│   │   ├── quests/                         # APP 3: ACTION ENGINE (Tasks & Habits)
+│   │   │   ├── __init__.py
+│   │   │   ├── apps.py
+│   │   │   ├── services.py                 # Math: Task Ranking Algorithm (Calculation Logic)
+│   │   │   ├── urls.py
+│   │   │   ├── admin/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── admin_task.py
+│   │   │   │   ├── admin_habit.py
+│   │   │   │   └── admin_routine.py
+│   │   │   └── models/
+│   │   │       ├── __init__.py
+│   │   │       ├── model_task.py
+│   │   │       ├── model_habit.py
+│   │   │       ├── model_habit_log.py
+│   │   │       └── model_routine.py
+│   │   │
+│   │   ├── inventory/                      # APP 4: WEALTH & ASSETS (Wallet, Items, Library)
+│   │   │   ├── __init__.py
+│   │   │   ├── apps.py
+│   │   │   ├── urls.py
+│   │   │   ├── admin/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── admin_wallet.py
+│   │   │   │   └── admin_asset_item.py
+│   │   │   └── models/
+│   │   │       ├── __init__.py
+│   │   │       ├── model_wallet.py
+│   │   │       ├── model_asset_item.py
+│   │   │       └── model_financial_log.py
+│   │   │
+│   │   ├── library/                        # APP 5: KNOWLEDGE (Books & Reading Logic)
+│   │   │   ├── __init__.py
+│   │   │   ├── apps.py
+│   │   │   ├── services.py                 # Reading Stats Logic
+│   │   │   ├── signals.py                  # INT Gain Trigger
+│   │   │   ├── urls.py
+│   │   │   ├── admin/
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── admin_book.py
+│   │   │   │   └── admin_reading_session.py
+│   │   │   └── models/
+│   │   │       ├── __init__.py
+│   │   │       ├── model_book.py
+│   │   │       └── model_reading_session.py
+│   │   │
+│   │   └── conquests/                      # APP 6: STORY MODE (Dungeons & Arcs)
+│   │       ├── __init__.py
+│   │       ├── apps.py
+│   │       ├── services.py                 # Boss Mode Logic
+│   │       ├── urls.py
+│   │       ├── admin/
+│   │       │   ├── __init__.py
+│   │       │   ├── admin_dungeon.py
+│   │       │   └── admin_arc.py
+│   │       └── models/
+│   │           ├── __init__.py
+│   │           ├── model_dungeon.py        # (Dungeon, DungeonStage)
+│   │           ├── model_arc.py
+│   │           └── model_red_gate.py
+│   │
+│   ├── auths/                              # IDENTITY
+│   │   ├── __init__.py
+│   │   └── user/                           # Custom User App
+│   │       ├── __init__.py
+│   │       ├── apps.py
+│   │       ├── admin/
+│   │       │   ├── __init__.py
+│   │       │   └── admin_user.py
+│   │       └── models/
+│   │           ├── __init__.py
+│   │           └── model_user.py           # CustomUser
+│   │
+│   ├── core/                               # CONFIGURATION
+│   │   ├── __init__.py
+│   │   ├── asgi.py
+│   │   ├── wsgi.py
+│   │   ├── urls.py
+│   │   └── settings/
+│   │       ├── __init__.py
+│   │       ├── base.py
+│   │       ├── dev.py
+│   │       └── prod.py
+│   ├── entrypoint.sh*
+│   ├── manage.py*
+│   ├── pyproject.toml
+│   ├── static/
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── vendor/
+│   ├── templates/
+│   │   ├── base.html
+│   │   └── includes/
+│   └── uv.lock
+│   │
+│   ├── static/
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── vendor/
+│   │
+│   ├── templates/
+│   │   ├── base.html
+│   │   ├── includes/
+│   │   ├── profiles/
+│   │   ├── gate/
+│   │   └── ...
+│   │
+│   ├── entrypoint.sh
+│   ├── manage.py
+│   ├── pyproject.toml
+│   └── uv.lock
+│
+├── dockerfiles/
+│   └── Django/
+│       └── Dockerfile
+│
+├── node_modules/
+│   ├── bootstrap/
+│   └── # and all the other npm packages
+├── compose.yaml
+├── package.json
+├── README.md
+└── update_vendor.py
+
+# tree -I "node_modules|__pycache__|venv|.git|.DS_Store" -L 4 -F
