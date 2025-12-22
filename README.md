@@ -1,38 +1,66 @@
-# Planner
+# ⚔️ The APEX Program Documentation
 
-This is **APEX Program** (using **UV python package manager**).
+> The weak always lose...
+Because it's only the strong who survive!
+
+This is **[The APEX Program](APEX_LINK)!**
 **Your Ultimate Planning and Daily System** to use for your life.
-Inspired by [Solo Leveling](https://www.imdb.com/title/tt21209876/)
 
-![Planner](./Planner.avif)
+![Apex Program](./docs/apex.png)
 
-## Features
+Welcome to the official documentation. [APEX Program](APEX_LINK) is a gamified life-management system inspired by the [Solo Leveling](https://www.imdb.com/title/tt21209876/)'s "System". The goal of this project is to manage every aspect of your life you want to improve (in An RPG style experience).
 
-- 🛡️ The Gate (Dashboard): A unified command center to track your daily timeline, biometrics, and active missions at a glance.
+## ✨ Features
 
-- ⚔️ Quest Board: Gamify your life by treating Habits and Routines as Ranked Quests (E-Rank to S-Rank) that award XP based on difficulty and fear.
+- **Smart Task Prioritization:** Automatically ranks daily to-dos using a "Complexity Score" that weighs duration, effort, and psychological resistance (Fear Factor).
 
-- 🏰 Conquest System: Turn long-term goals into multi-stage Dungeons. Progress from "Scouting" to the final "Boss Fight" to clear major life milestones.
+- **Habit & Routine Builder:** Tracks consistency through streaks and groups related habits into executable sequences (e.g., Morning Routine).
 
-- 🧠 Dynamic Stats: Watch your real-life attributes (Physique, Intellect, Charisma, Discipline, Psyche) level up as you complete relevant tasks.
+- **Goal & Project Execution:** Manages complex projects ("Dungeons") with Kanban boards, strictly enforced deadlines, and emergency timers to prevent procrastination.
 
-- 🎒 Inventory & Wealth: A dedicated system to track your assets, net worth ("Gold"), and consumables, separating your finances from your equipment.
+- **Long-Term Vision Planning:** Structures life goals into 4 distinct horizons: 25-year Visions, 10-year Questlines, Monthly Arcs, and Daily Tasks.
 
-- 📚 The Library: An active reading tracker that logs pages read and time spent, directly feeding into your Intellect stat.
+- **Seasonal Focus Themes:** Organizes time into "Arcs" (e.g., "The Awakening Arc"), allowing you to filter current objectives based on your life's current chapter or season.
 
-- ❤️ Biometric Tracking: Monitor your Energy, Mood, and Sleep patterns to ensure your "Player Character" stays in peak condition.
+- **Failure Analysis & Reflection:** Includes a "Strategic Withdrawal" protocol that prompts you to journal reasons for abandoning goals, turning failures into "Wisdom" data rather than just loss.
 
-- 📜 Hunter’s Journal: A daily reflection system ("Wins" & "Lessons") that converts your daily experiences into Wisdom XP.
+- **Learning Management System (LMS):** A dedicated "Library" to track reading lists, log study sessions, and manage progress on books or online courses.
 
-## 🛠 Tech Stack
+- **Financial Portfolio:** Monitors liquid assets (Gold), income sources, and savings goals alongside a ledger for major expenditures.
 
-- **Backend:** Python, Django 5.2, Django REST Framework
-- **BacFrontend:** Django Templates, Bootstrap 5, HTML5, CSS3, Vanilla JavaScript
-- **Database:** PostgreSQL
-- **DevOps & Infrastructure:** Docker, Docker Compose
-- **Tooling:** UV (Python Package Manager), Bash/Shell Scripts
+- **Inventory & Consumables:** Tracks possession of physical assets (e.g., tech gear) and manages recurring consumables like supplements with status indicators (e.g., "Low", "Empty").
 
-## Setup
+- **Milestone & Legacy Tracking:** Automates "Feats of Strength" badges for aggregate data (e.g., "10,000 Pages Read") and awards Titles to validate identity shifts.
+
+## 🛠️ Tech Stack
+
+- ***Programming Language***
+  - **Python 3.10+**
+  - **UV** – ultra-fast Python package manager and virtual environment replacement
+- ***Backend***
+  - **Django 5.2**
+  - **Django REST Framework** – API layer for data synchronization across devices
+- ***Database***
+  - **PostgreSQL**
+- ***Frontend***
+  - **Django Templates**
+  - **Bootstrap 5.3** (Dark Mode)
+  - **HTML5, CSS3**
+- ***Client-Side Scripting***
+  - **Vanilla JavaScript (ES6)**
+- ***JavaScript Tooling***
+  - **Node.js**
+  - **npm** – package manager for frontend dependencies and build tools
+- ***DevOps & Environment***
+  - **Docker & Docker Compose** – optional containerized setup for desktop environments
+  - **Temux** - run the full Django backend natively on Android (no hosting, no domain)
+- ***Tooling & Automation***
+  - **UV** - dependency management & project execution
+  - **Bash/Shell Scripts** - environment setup and automation
+
+## 🚀 Quick Start
+
+The APEX Program is designed to run on a local server, specifically optimized for Android Termux and Localhost.
 
 To run project locally, in production or using Docker you need to setup environment variables first. Rename the `.env.example` to `.env` and fill the required values.
 
@@ -79,62 +107,18 @@ First install [uv package manager](https://docs.astral.sh/uv/getting-started/ins
    docker compose up --build
    ```
 
-## Project Architecture
+## 📂 Documentation
 
-This project follows a Domain-Driven modular structure.
-Models and Admin configuration are split into packages.
+You can visit `docs/` directory which contains the records for the system's logic, architecture, and data design.
 
-```bash
-APEX Program/
-├── backend/
-│   ├── apps/                         # GAMEPLAY DOMAINS
-│   │   ├── profiles/                 # App 1: Character Sheet
-│   │   │   ├── models/               # (Split: Profile, Stats, Titles)
-│   │   │   ├── admin/                # (Split: Modular Admin configs)
-│   │   │   ├── services.py           # XP & Leveling Logic
-│   │   │   └── signals.py            # Level Up Triggers
-│   │   │
-│   │   ├── gate/                     # App 2: Dashboard & Time
-│   │   │   ├── models/               # (Split: DailyEntry, Journal)
-│   │   │   └── utils.py              # Date conversion (Gregorian <-> Jalali)
-│   │   │
-│   │   ├── quests/                   # App 3: Action Engine
-│   │   │   ├── models/               # (Split: Task, Habit, Logs)
-│   │   │   └── services.py           # Rank Calculation Algorithm
-│   │   │
-│   │   ├── inventory/                # App 4: Wealth & Assets
-│   │   │   ├── models/               # (Split: Wallet, Items, Finance)
-│   │   │   └── admin/
-│   │   │
-│   │   ├── library/                  # App 5: Knowledge System
-│   │   │   ├── models/               # (Split: Book, ReadingSession)
-│   │   │   ├── services.py           # Reading Stats Logic
-│   │   │   └── signals.py            # INT Stat Trigger
-│   │   │
-│   │   └── conquests/                # App 6: Story Mode
-│   │       ├── models/               # (Split: Dungeon, Arc, RedGate)
-│   │       └── services.py           # Boss Mode Logic
-│   │
-│   ├── auths/                        # IDENTITY
-│   │   └── user/                     # Custom User Model
-│   │
-│   ├── core/                         # CONFIGURATION
-│   │   ├── settings/                 # (base.py, dev.py, prod.py)
-│   │   ├── urls.py
-│   │   └── wsgi.py
-│   │
-│   ├── static/                       # ASSETS (css, js, vendor)
-│   ├── templates/                    # HTML (base.html, app folders)
-│   ├── entrypoint.sh
-│   ├── manage.py
-│   └── pyproject.toml
-│
-├── dockerfiles/                      # Docker Configs
-├── node_modules/                     # Frontend Dependencies
-├── compose.yaml
-├── package.json
-└── update_vendor.py                  # Script: Copy npm -> static
-```
+01. [Scenario & Game Mechanics](./docs/Senario.md)
+    - Read this to understand Apex Program scenario: How features work and Logic behind them.
+
+02. [Technical Structure](./docs/Structure.md)
+    - Read this to understand the code: The Django app structure, directory tree, and technology stack.
+
+03. [Database Schema](https://dbdiagram.io/d/Apex-Program-6946b6944bbde0fd74e30a68)
+    - You can visit [dbdiagram](https://dbdiagram.io/) website to see the ERD diagram used for models architecture.
 
 ## Contributing
 
@@ -148,4 +132,5 @@ Contributions are always welcome!
 
 ## License
 
-This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/).
+This project is licensed under the [MIT License](https://choosealicense.com/licenses/mit/).
+You are free to use, modify, and distribute this software with proper attribution.
