@@ -3,12 +3,12 @@
 > The weak always lose...
 Because it's only the strong who survive!
 
-This is **[The APEX Program](APEX_LINK)!**
+This is **[The APEX Program](https://github.com/haadijafari/APEX_Program)!**
 **Your Ultimate Planning and Daily System** to use for your life.
 
 ![Apex Program](./docs/apex.png)
 
-Welcome to the official documentation. [APEX Program](APEX_LINK) is a gamified life-management system inspired by the [Solo Leveling](https://www.imdb.com/title/tt21209876/)'s "System". The goal of this project is to manage every aspect of your life you want to improve (in An RPG style experience).
+Welcome to the official documentation. [APEX Program](https://github.com/haadijafari/APEX_Program) is a gamified life-management system inspired by the [Solo Leveling](https://www.imdb.com/title/tt21209876/)'s "System". The goal of this project is to manage every aspect of your life you want to improve (in An RPG style experience).
 
 ## ✨ Features
 
