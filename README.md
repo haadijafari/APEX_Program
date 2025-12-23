@@ -120,15 +120,10 @@ You can visit `docs/` directory which contains the records for the system's logi
 03. [Database Schema](https://dbdiagram.io/d/Apex-Program-6946b6944bbde0fd74e30a68)
     - You can visit [dbdiagram](https://dbdiagram.io/) website to see the ERD diagram used for models architecture.
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are always welcome!
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/your-feature`)
-5. Open a pull request
+Checkout [Contributing Guide](./docs/Contribute.md) for how to contribute instructions.
 
 ## License
 
