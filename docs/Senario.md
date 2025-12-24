@@ -58,7 +58,7 @@ Each aspect of life will be tracked by the system under 5 main stats:
 
 - **`CHA` (Charisma):** Social Skills, Networking, Grooming, Negotiation, and everything which gives you more power in social dynamics.
 
-- **`WILL` (Discipline):** Habit streaks, Routine adherence, and everything which requires commitment.
+- **`WIL` (Discipline):** Habit streaks, Routine adherence, and everything which requires commitment.
 
 - **`WIS` (Psyche):** Meditation, Journaling, Emotional control, and everything related to your mental health.
 
@@ -207,7 +207,7 @@ Single, one-time actions that require effort and time (e.g., "Write Chapter 1", 
 
 ### Habits
 
-Recurring actions performed on a specific schedule (e.g., "Gym: Mon/Wed/Fri", "Read: Daily"). Streaks are tracked to boost `WILL` and `consistency`.
+Recurring actions performed on a specific schedule (e.g., "Gym: Mon/Wed/Fri", "Read: Daily"). Streaks are tracked to boost `WIL` and `consistency`.
 
 ### Routines
 
