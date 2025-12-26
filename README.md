@@ -123,7 +123,7 @@ You can visit `docs/` directory which contains the records for the system's logi
 ## 🤝 Contributing
 
 Contributions are always welcome!
-Checkout [Contributing Guide](./docs/Contribute.md) for how to contribute instructions.
+Checkout [Contributing Guide](./CONTRIBUTING.md) for how to contribute instructions.
 
 ## License
 
