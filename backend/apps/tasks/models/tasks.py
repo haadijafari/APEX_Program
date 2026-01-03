@@ -2,6 +2,8 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from apps.profiles.models import PlayerStats
+
 
 class Task(models.Model):
     class Rank(models.TextChoices):
@@ -21,10 +23,24 @@ class Task(models.Model):
     title = models.CharField(_("Title"), max_length=255)
     description = models.TextField(_("Description"), blank=True)
 
-    # --- Rewards (JSON) ---
-    # e.g., {'INT': 100, 'WIL': 50}
-    # TODO: Consider linking to PlayerStats directly for integrity
-    stat_rewards = models.JSONField(_("Stat Rewards"), default=dict, blank=True)
+    # --- Rewards ---
+    primary_stat = models.CharField(
+        _("Primary Stat"),
+        max_length=3,
+        choices=PlayerStats.StatType.choices,
+        default=PlayerStats.StatType.STR,
+        help_text=_(
+            "The main stat this task develops (60% XP or 100% if no secondary)."
+        ),
+    )
+    secondary_stat = models.CharField(
+        _("Secondary Stat"),
+        max_length=3,
+        choices=PlayerStats.StatType.choices,
+        blank=True,
+        null=True,
+        help_text=_("Optional. If set, it receives 40% of the XP."),
+    )
 
     # --- Complexity Math ---
     duration_minutes = models.PositiveIntegerField(
@@ -110,6 +126,28 @@ class Task(models.Model):
         }
         return rank_xp.get(self.final_rank, 15)
 
+    @property
+    def xp_distribution(self):
+        """
+        Calculates the exact XP split based on the Rank Reward and 60/40 logic.
+        Returns a dict: {'STR': 45, 'INT': 30}
+        """
+        total_xp = self.xp_reward
+
+        # Case 1: No Secondary Stat (or same as primary) -> 100% to Primary
+        if not self.secondary_stat or self.secondary_stat == self.primary_stat:
+            return {self.primary_stat: total_xp}
+
+        # Case 2: Split 60/40
+        primary_amount = int(total_xp * 0.60)
+        # Give the remainder to secondary to avoid rounding loss (e.g. 75 XP -> 45 + 30)
+        secondary_amount = total_xp - primary_amount
+
+        return {
+            self.primary_stat: primary_amount,
+            self.secondary_stat: secondary_amount,
+        }
+
     def calculate_score(self):
         # Score = [(Duration * 0.25) + (Effort * 1.5) + (Impact^3)] * FearFactor
         duration_score = min(
@@ -125,6 +163,11 @@ class Task(models.Model):
         # --- Capitalize Title ---
         if self.title:
             self.title = self.title.strip().title()
+
+        # --- Sanity Check: Prevent redundant secondary stat ---
+        # If user selects the same stat for both, treat it as Single Stat (100% Primary)
+        if self.secondary_stat == self.primary_stat:
+            self.secondary_stat = None
 
         # Calculate and set computed rank before saving
         score = self.calculate_score()
