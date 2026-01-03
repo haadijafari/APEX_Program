@@ -1,0 +1,18 @@
+{% load static %}
+
+<div class="card border-system h-100" style="border-width: 1px; box-shadow: 0 0 15px rgba(var(--apex-primary-rgb), 0.1);">
+    <div class="card-body text-center py-4 d-flex flex-column justify-content-center">
+        <h5 class="text-system fw-bold mb-3">TODAY'S QUEST</h5>
+        <p class="text-secondary small mb-4">
+            Complete your daily routine to earn XP and avoid penalty.
+        </p>
+        
+        <a href="{% url 'e:gate' %}" class="btn btn-outline-primary border-system text-system fw-bold py-2 w-100">
+            {% if has_gate_log %}
+                CONTINUE RAID ⚔️
+            {% else %}
+                ENTER GATE 🌀
+            {% endif %}
+        </a>
+    </div>
+</div>

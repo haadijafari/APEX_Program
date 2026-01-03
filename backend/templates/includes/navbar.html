@@ -2,7 +2,7 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark mb-4 sticky-top" style="background-color: var(--apex-bg-card); border-bottom: 1px solid var(--apex-border);">
     <div class="container">
-        <a class="navbar-brand fw-bold text-system d-flex align-items-center" href="{% url 'daily:index' %}">
+        <a class="navbar-brand fw-bold text-system d-flex align-items-center" href="{% url 'gate:index' %}">
             <span class="me-2">🚀</span> 
             APEX Program 
             <span class="badge bg-system-soft text-system ms-2 fs-7" style="font-size: 0.7rem;">v1.0</span>
@@ -17,14 +17,14 @@
                 
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active fw-bold text-white{% endif %}" 
-                       href="{% url 'daily:index' %}">
+                       href="{% url 'gate:index' %}">
                         STATUS WINDOW
                     </a>
                 </li>
 
                 <li class="nav-item ms-lg-3">
                     <a class="nav-link {% if request.resolver_match.url_name == 'gate' %}active fw-bold text-white{% endif %}" 
-                       href="{% url 'daily:gate' %}">
+                       href="{% url 'gate:gate' %}">
                         THE GATE (Daily)
                     </a>
                 </li>
