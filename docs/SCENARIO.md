@@ -14,22 +14,21 @@ As a player you will start the Apex program at **Level 1**. Each task you comple
 
 The amount of XP you will need to level up to the next level is calculated through the `XP curve Formula`.
 
-#### XP Curve Formula
+#### General XP Curve Formula
 
 $$
 XP_{Raw} = 100 \times (1.06)^{\text{Current Level}}
 $$
 
 $$
-XP_{Required} = \lceil \frac{XP_{Raw}}{100} \rceil \times 100
+XP_{Required} = min\{\lceil \frac{XP_{Raw}}{100} \rceil \times 100, 30000\}
 $$
 
 *The system calculates the raw XP, then rounds it **up** to the nearest 100 (e.g., 12,345 becomes 12,400) for a cleaner progression.*
 
-- **Novice Protection:** The minimum XP required is naturally clamped to **100** by the rounding formula.
+- **Novice Protection:** The minimum XP required is naturally clamped to **200** by the rounding formula.
 - **End-Game Cap:** The maximum XP per level is capped at **30,000** to ensure even high levels are achievable within a human lifetime.
-- **Leveling Up:** When you reach the required XP, a popup window appears with your rewards. **You cannot continue using the System until you collect your rewards.**
-- **Reward:** Gaining a level grants **+3 Ability Points (AP)** . These APs will be used to upgrade your stats (read [Attributes (Stats)](#2-attributes-stats) section).
+- **Leveling Up:** When you reach the required XP, you may level up your characters level.
 
 ### Ranks
 
@@ -62,13 +61,30 @@ Each aspect of life will be tracked by the system under 5 main stats:
 
 - **`WIS` (Psyche):** Meditation, Journaling, Emotional control, and everything related to your mental health.
 
-**XP Source Tracking:** While XP is generic, the system tracks the source of that XP. To ensure your character build reflects your actual life:
+### XP Source Tracking
 
-1. **Mandatory Stat Tagging:** Every Task, Habit, or Dungeon **must** be assigned a primary Related Stat.
+`General Level` is an aggregate of your effort, while `Stat Levels` track specific mastery to ensure your character build reflects your actual life.
 
-2. **Affinity Lock:** You are **forbidden** from leveling up a stat that has very low affinity percentage for the current level.
-    - **Threshold Rule:** You can spend 1 AP on any stat that contributed **at least 15%** to this level's XP.
-    - *Example:* If you spent the entire level coding and one pushup (99% `INT` vs 1% `STR` affinity), you cannot spend your AP on `STR`. You must spend it on INT.
+#### Stat XP Curve Formula
+
+Each stat will have its own level and the required XP for leveling them up are calculated using this formula:
+
+$$
+XP_{Raw} =
+100 \times (1.06)^{\text{Current Level}} \times {\text{Current Level}}
+$$
+
+$$
+XP_{Required} =
+\lceil \frac{XP_{Raw}}{100} \rceil \times 100
+$$
+
+You may collect each stat's xp from tasks dedicated to that stat.
+
+**Mandatory Stat Tagging:** Every Task **must** be assigned a primary Related Stat and an optional secondary one (by task we mean simple tasks, habits or even a single routine task).
+Routines, Dungeons, Red Gates, Questlines, Visions, and any other feature that contains multiple tasks can have a dynamic number of stats for better categorization.
+
+- **Logic:** Primary stat gets 60% of xp, Secondary gets 40%.
 
 **The Affinity Chart:** When leveling up, the system displays a chart showing:
 
@@ -76,7 +92,12 @@ Each aspect of life will be tracked by the system under 5 main stats:
 
 2. **Lifetime Affinity:** What is your overall character build percentage?
 
-**Reasoning:** You are required to write a short reason why the chosen stat is worthy of an upgrade.
+    **Reasoning:** This report will clarify what aspects of life you were focused recently.
+
+**Stat Decay:** If you don't use a stat (e.g., no xp gain in `STR`) for 10 days, it slowly loses XP. "Use it or lose it". If 10 days has passed and you have not done any tasks for a stat, from day 11 till you do a task for that stat your stat's xp will be reduced.
+
+- **Decay Rate:** 10% of current level's required XP per day
+- **De-Leveling:** your stat will de-level if XP drops below the threshold.
 
 ---
 
@@ -96,6 +117,7 @@ The system structures life plans into four layers to manage goals from **"Lifeti
 - **Scope:** 5 - 15 Years.
 - **Concept:** Breakdown of visions (e.g., "Graduate from Management University", "Immigration").
 - **Structure:** Each Questline contains multiple `Dungeons`.
+- **Mechanic:** Visions are managed under the `Conquest` tab. The description is your personal manifesto for that future.
 
 ### Dungeons
 
@@ -133,7 +155,7 @@ The Dungeons mechanics are so similar to the Trello app.
 
 - **Scout:** Goal setting. You are examining the dungeon and defining the target tasks.
 - **Entry (First Floor):** Commitment. You have formally started working on this dungeon.
-- **Mid-Boss:** Though times. Triggered automatically as soon as the first C or higher rank task is completed.
+- **Mid-Boss:** Tough times. Triggered automatically as soon as the first C or higher rank task is completed.
   - Mid-Bosses are strictly for C-Rank Dungeons and above, or if the Task Rank overrides the Dungeon Rank.
 - **Boss (Boss Floor):** Climax. You are putting all effort into finalizing the project.
 - **Clear:** Victory! The project is 100% complete. Rewards are distributed.
@@ -152,6 +174,8 @@ The Dungeons mechanics are so similar to the Trello app.
 | S-Rank    | 20,000 XP        | **Grand Ambitions:** Massive, multi-year undertakings with high risk (e.g., "Reach $100k Net Worth", "Obtain Senior Role").          |
 | SS-Rank   | 30,000 XP        | **Legacy Achievements:** "National Level" feats that define a decade (e.g., "Buy a House", "Start a Successful Company").            |
 | Monarch   | 60,000 XP        | **The Final Vision:** The ultimate culmination of your life's work or "Life Purpose" (e.g., "Financial Freedom", "Industry Leader"). |
+
+**Dungeon Rank limit:** You will need at least one task with the same or higher rank of the dungeon or the dungeon will not proceed from `Scout` to `Entry` stage and as the result you are unable to start that dungeon until you change the dungeons rank or provide suitable tasks.
 
 ### ☠️ The Dungeon Break (Time Limit Failure)
 
@@ -242,16 +266,16 @@ $$
   - **1.5:** Anxiety-inducing.
   - **2.0:** Terrifying.
 
-| Score Range  | Rank    | Base XP | Description                                    |
-| ------------ | ------- | ------- |--------------                                  |
-| 3 - 20       | E-Rank  | 15 XP   | Simple Maintenance (Brush Teeth, Make Bed)     |
-| 21 - 45      | D-Rank  | 35 XP   | Routine Work (30m Study, Gym)                  |
-| 46 - 75      | C-Rank  | 75 XP   | Standard Quest (Deep Work, Long Study)         |
-| 76 - 120     | B-Rank  | 150 XP  | Challenge (Project Milestone, Complex Bug Fix) |
-| 121 - 180    | A-Rank  | 350 XP  | Major Feat (Launch MVP, Ace Final Exam)        |
-| 181 - 250    | S-Rank  | 700 XP  | Nightmare Quest (High Fear **or** High Impact) |
-| 251 - 280    | SS-Rank | 1200 XP | National Level (High Fear **and** High Impact) |
-| 281+         | Monarch | 1500 XP | Shadow Monarch (Buy House, Exit Startup)       |
+| Score Range  | Rank    | Base XP  | Description                                    |
+| ------------ | ------- | -------- |----------------------------------------------- |
+| 3 - 20       | E-Rank  | 15 XP    | Simple Maintenance (Brush Teeth, Make Bed)     |
+| 21 - 45      | D-Rank  | 35 XP    | Routine Work (30m Study, Gym)                  |
+| 46 - 75      | C-Rank  | 75 XP    | Standard Quest (Deep Work, Long Study)         |
+| 76 - 120     | B-Rank  | 150 XP   | Challenge (Project Milestone, Complex Bug Fix) |
+| 121 - 180    | A-Rank  | 350 XP   | Major Feat (Launch MVP, Ace Final Exam)        |
+| 181 - 250    | S-Rank  | 700 XP   | Nightmare Quest (High Fear **or** High Impact) |
+| 251 - 280    | SS-Rank | 1,200 XP | National Level (High Fear **and** High Impact) |
+| 281+         | Monarch | 1,500 XP | Shadow Monarch (Buy House, Exit Startup)       |
 
 ---
 
@@ -278,14 +302,14 @@ Everything you read or study is treated as a "Book" in the system, even if it is
 
 Books are ranked by their complexity and density. Finishing a book grants a "Completion Bonus" based on its rank.
 
-| Book Rank | Completion Bonus  | Type of Content                          |
-| --------- | ----------------  |------------------------------------------|
-| E-Rank    | 50 XP             | Light Novel, Manga, Casual Articles      |
-| D-Rank    | 150 XP            | Self-Help, Biographies, Simple Fiction   |
-| C-Rank    | 400 XP            | Technical Manuals, Textbooks (Undergrad) |
-| B-Rank    | 1000 XP           | Advanced Technical, Scientific Papers    |
-| A-Rank    | 2500 XP           | PhD Thesis, Complex Philosophy           |
-| S+ Rank   | 6000+ XP          | "Forbidden Knowledge" (Life's Work)      |
+| Book Rank | Completion Bonus   | Type of Content                          |
+| --------- | ------------------ |------------------------------------------|
+| E-Rank    | 50 XP              | Light Novel, Manga, Casual Articles      |
+| D-Rank    | 150 XP             | Self-Help, Biographies, Simple Fiction   |
+| C-Rank    | 400 XP             | Technical Manuals, Textbooks (Undergrad) |
+| B-Rank    | 1,000 XP           | Advanced Technical, Scientific Papers    |
+| A-Rank    | 2,500 XP           | PhD Thesis, Complex Philosophy           |
+| S+ Rank   | 6,000+ XP          | "Forbidden Knowledge" (Life's Work)      |
 
 ---
 
@@ -295,7 +319,7 @@ A dedicated archive to immortalize your victories, titles, and major milestones.
 
 ### Titles
 
-Special designations you earn by completing specific Questlines or achieving stats milestones. You can choose one "Equipped Title" to display on your dashboard profile.
+Special designations you earn by completing specific Questlines or achieving stat's milestones. You can choose one "Equipped Title" to display on your dashboard profile.
 
 - **Logic:** Earning a title does not grant stats, but it validates your identity change.
 - **Examples:**
@@ -338,7 +362,7 @@ Significant physical items that empower you.
 
 - **Home:** Apartment/House.
 - **Mounts:** Car, Motorcycle, Bicycle.
-- **Gear:** Laptop (e.g., RTX 3060ti), Phone, Musical Instruments.
+- **Gear:** Laptop (e.g., ASUS V401U), Phone, Musical Instruments.
 
 ### Consumables
 
