@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.profiles.models import PlayerAttribute, PlayerProfile
+from apps.profiles.models import PlayerProfile, PlayerStats
 
 
 # --- Signals ---
@@ -22,7 +22,7 @@ def create_user_profile(sender, instance, created, **kwargs):
         ]
 
         for stat_name, desc in default_stats:
-            PlayerAttribute.objects.create(
+            PlayerStats.objects.create(
                 user=instance, name=stat_name, value=10, description=desc
             )
 

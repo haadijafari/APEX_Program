@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 
 
-class PlayerAttribute(models.Model):
+class PlayerStats(models.Model):
     """
     Dynamic stats. The user can have 'Strength', 'Python', 'Charisma', etc.
     """

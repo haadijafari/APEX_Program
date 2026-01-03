@@ -2,13 +2,13 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from apps.accounts.models import User
-from apps.profiles.admin import PlayerAttributeInline, PlayerProfileInline
+from apps.profiles.admin import PlayerProfileInline, PlayerStatsInline
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     # Add both inlines
-    inlines = (PlayerProfileInline, PlayerAttributeInline)
+    inlines = (PlayerProfileInline, PlayerStatsInline)
 
     list_display = ("username", "get_level", "get_rank", "is_staff")
 
