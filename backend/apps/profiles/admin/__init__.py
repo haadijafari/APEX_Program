@@ -1,2 +1,2 @@
-from apps.profiles.admin.attributes import PlayerStatsInline
-from apps.profiles.admin.profiles import PlayerProfileInline
+from apps.profiles.admin.profiles import PlayerProfileAdmin, PlayerProfileInline
+from apps.profiles.admin.stats import PlayerStatsInline
