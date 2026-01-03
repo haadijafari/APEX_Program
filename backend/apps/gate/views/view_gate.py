@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from apps.gate.forms import DayPageForm
 from apps.gate.models.daily_entry import DayPage
-from apps.gate.models.routines import Routine
+from apps.tasks.models import Routine
 
 
 @login_required

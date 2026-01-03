@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import models, transaction
 from django.db.models import F, Max
 from django.utils.translation import gettext_lazy as _
@@ -6,81 +5,56 @@ from django.utils.translation import gettext_lazy as _
 
 class Routine(models.Model):
     """
-    Holds a collection of routine items, e.g., "Morning Routine"
-    or "Evening Routine", linked to a specific user.
+    A collection of tasks (Routine Items).
     """
 
-    # Link to the user who owns this routine
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="routines"
+    profile = models.ForeignKey(
+        "profiles.PlayerProfile", on_delete=models.CASCADE, related_name="routines"
     )
+    title = models.CharField(_("Title"), max_length=100)
+    description = models.TextField(_("Description"), blank=True)
 
-    # The name of the routine
-    name = models.CharField(
-        max_length=100,
-        verbose_name=_("Routine Name"),
-        help_text=_("e.g., 'Morning Routine', 'Workout', 'Evening Wind-down'"),
-    )
+    # e.g., Morning, Evening
+    # TODO: Define structure for schedule_config
+    schedule_config = models.JSONField(_("Schedule Config"), default=dict, blank=True)
 
-    # Is this routine currently in use?
+    # --- Status ---
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("Active"),
+        verbose_name=_("Is Active?"),
         help_text=_("Uncheck this to archive or hide this routine."),
     )
 
     # --- Timestamps ---
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 
     class Meta:
         verbose_name = _("Routine")
         verbose_name_plural = _("Routines")
-        # Ensure a user cannot have two routines with the same name
-        unique_together = ["user", "name"]
-        ordering = ["name"]
+        # Ensure a profile cannot have two routines with the same title
+        unique_together = ["profile", "title"]
+        ordering = ["title"]
 
     def __str__(self):
-        return self.name
+        return self.title
 
     def save(self, *args, **kwargs):
-        # Clean up the name before saving
-        if self.name:
-            self.name = self.name.strip().title()
+        # Clean up the title before saving
+        if self.title:
+            self.title = self.title.strip().title()
         super().save(*args, **kwargs)
 
 
 class RoutineItem(models.Model):
     """
-    Represents a single, user-defined item in the morning routine
-    for a specific Routine.
+    Links a Task to a Routine with an order.
     """
 
-    # This is now a ForeignKey, because one Routine
-    # will have *many* routine items.
-    routine = models.ForeignKey(
-        "gate.Routine", on_delete=models.CASCADE, related_name="routine_items"
-    )
-
-    # --- Fields for the dynamic item ---
-    title = models.CharField(
-        max_length=255,
-        blank=False,
-        null=False,
-        verbose_name=_("Title"),
-        help_text=_(
-            "What is the routine item? (e.g., 'Brushing Teeth', 'Meditate 10 mins')"
-        ),
-    )
-
-    description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name=_("Description"),
-        help_text=_("Any extra details about the item (optional)"),
-    )
-
-    is_active = models.BooleanField(default=True, verbose_name=_("Active"))
+    routine = models.ForeignKey(Routine, on_delete=models.CASCADE, related_name="items")
+    task = models.ForeignKey(
+        "tasks.Task", on_delete=models.CASCADE
+    )  # The actual action
 
     priority = models.PositiveIntegerField(
         # We allow it to be blank, then set the default in the save() method
@@ -93,9 +67,16 @@ class RoutineItem(models.Model):
         ),
     )
 
+    # --- Status ---
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("Is Active?"),
+        help_text=_("Uncheck this to archive or hide this routine."),
+    )
+
     # --- Timestamps ---
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 
     class Meta:
         verbose_name = _("Routine Item")
@@ -109,10 +90,6 @@ class RoutineItem(models.Model):
         return f"{self.priority} | {self.title}"
 
     def save(self, *args, **kwargs):
-        # --- Capitalize Title ---
-        if self.title:
-            self.title = self.title.strip().title()
-
         # --- Priority Standardize ---
         # Start an atomic block to ensure database integrity during reordering
         with transaction.atomic():

@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # Project Apps
     "apps.accounts",
     "apps.api",
+    "apps.tasks",
     "apps.gate",
     "apps.conquests",
     "apps.inventory",
