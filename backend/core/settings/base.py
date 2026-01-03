@@ -14,7 +14,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # Debug Status
 DEBUG = os.environ.get("DEBUG") == "True"
 # User
-AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL = "accounts.User"
 
 
 # Application definition
@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Project Apps
-    "auths.user",
+    "apps.accounts",
     "apps.api",
     "apps.gate",
     "apps.conquests",

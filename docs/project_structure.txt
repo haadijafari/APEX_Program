@@ -4,6 +4,15 @@
 ├── backend/
 │   ├── apps/                               # PROJECT LOGIC APPS (The System)
 │   │   ├── __init__.py
+│   │   ├── accounts/                           # Custom User App
+│   │   │   ├── __init__.py
+│   │   │   ├── apps.py
+│   │   │   ├── admin/
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── user.py
+│   │   │   └── models/
+│   │   │       ├── __init__.py
+│   │   │       └── user.py           # CustomUser
 │   │   ├── api/                            # Global API Configs (if needed)
 │   │   │
 │   │   ├── profiles/                       # APP 1: CHARACTER SHEET 
@@ -99,17 +108,6 @@
 │   │           ├── model_arc.py
 │   │           └── model_red_gate.py
 │   │
-│   ├── auths/                              # IDENTITY
-│   │   ├── __init__.py
-│   │   └── user/                           # Custom User App
-│   │       ├── __init__.py
-│   │       ├── apps.py
-│   │       ├── admin/
-│   │       │   ├── __init__.py
-│   │       │   └── admin_user.py
-│   │       └── models/
-│   │           ├── __init__.py
-│   │           └── model_user.py           # CustomUser
 │   │
 │   ├── core/                               # CONFIGURATION
 │   │   ├── __init__.py

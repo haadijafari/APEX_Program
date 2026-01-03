@@ -1,8 +1,8 @@
-from auths.user.models import PlayerProfile
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils import timezone
 from django.views.generic import TemplateView
 
+from apps.accounts.models import PlayerProfile
 from apps.gate.models.daily_entry import DayPage
 from apps.gate.services.calendar import get_jalali_calendar_context
 
