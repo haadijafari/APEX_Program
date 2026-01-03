@@ -1,23 +1,52 @@
-from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class PlayerStats(models.Model):
     """
-    Dynamic stats. The user can have 'Strength', 'Python', 'Charisma', etc.
+    Tracks the 5 Main Attributes and their specific XP.
     """
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="attributes"
+    class StatType(models.TextChoices):
+        STR = "STR", "Physique"
+        INT = "INT", "Intellect"
+        CHA = "CHA", "Charisma"
+        WIL = "WIL", "Discipline"
+        WIS = "WIS", "Psyche"
+
+    profile = models.OneToOneField(
+        "profiles.PlayerProfile", on_delete=models.CASCADE, related_name="stats"
     )
 
-    name = models.CharField(max_length=50)  # e.g. "Intellect"
-    value = models.PositiveIntegerField(default=10)
-    description = models.CharField(max_length=100, blank=True, null=True)
+    # --- Stats ---
+    # We store Level and XP for each.
+    str_level = models.PositiveIntegerField(_("Physique Level"), default=1)
+    str_xp = models.PositiveIntegerField(_("Physique XP"), default=0)
 
-    class Meta:
-        unique_together = ["user", "name"]  # Can't have two "Strength" stats
-        ordering = ["name"]
+    int_level = models.PositiveIntegerField(_("Intellect Level"), default=1)
+    int_xp = models.PositiveIntegerField(_("Intellect XP"), default=0)
+
+    cha_level = models.PositiveIntegerField(_("Charisma Level"), default=1)
+    cha_xp = models.PositiveIntegerField(_("Charisma XP"), default=0)
+
+    wil_level = models.PositiveIntegerField(_("Discipline Level"), default=1)
+    wil_xp = models.PositiveIntegerField(_("Discipline XP"), default=0)
+
+    wis_level = models.PositiveIntegerField(_("Psyche Level"), default=1)
+    wis_xp = models.PositiveIntegerField(_("Psyche XP"), default=0)
+
+    # --- Timestamps ---
+    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 
     def __str__(self):
-        return f"{self.name}: {self.value}"
+        return f"Stats for {self.profile.user.username}"
+
+    def get_xp_required(self, level):
+        """
+        Stat Formula: ceil( (100 * (1.06)^L * L) / 100 ) * 100
+        """
+        import math
+
+        raw = 100 * (1.06**level) * level
+        return math.ceil(raw / 100) * 100
