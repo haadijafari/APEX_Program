@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from django.templatetags.static import static
 from django.urls import reverse_lazy
 from dotenv import load_dotenv
 
@@ -156,7 +157,7 @@ UNFOLD = {
     "SITE_TITLE": "Apex Program",
     "SITE_HEADER": "Apex Admin",
     "SITE_URL": "/",
-    # "SITE_ICON": lambda request: static("icon.svg"),  # optional
+    "SITE_ICON": lambda request: static("img/favicon.png"),
     # "DASHBOARD_CALLBACK": "apps.core.views.dashboard_callback",  # render custom charts or stats on the admin homepage
     "SIDEBAR": {
         "show_search": True,  # Search in applications and models names
