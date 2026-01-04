@@ -40,7 +40,14 @@
                     <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark border-secondary shadow-lg">
                         <li><a class="dropdown-item" href="#">⚙️ Settings</a></li>
                         <li><hr class="dropdown-divider border-secondary"></li>
-                        <li><a class="dropdown-item text-danger" href="#">🚪 Log Out</a></li>
+                        <li>
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger">
+                                    🚪 Log Out
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 </li>
                 {% endif %}

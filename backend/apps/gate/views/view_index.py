@@ -21,7 +21,23 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
         # 1. Player Stats
         profile, created = PlayerProfile.objects.get_or_create(user=user)
-        attributes = user.attributes.all()
+        # Access the Stats model linked to the profile
+        # We use getattr to safely handle cases where 'stats' might be missing (e.g. if signals failed)
+        stats = getattr(profile, "stats", None)
+
+        if stats:
+            stat_labels = ["STR", "INT", "CHA", "WIL", "WIS"]
+            stat_values = [
+                stats.str_level,
+                stats.int_level,
+                stats.cha_level,
+                stats.wil_level,
+                stats.wis_level,
+            ]
+        else:
+            # Fallback defaults if stats are missing
+            stat_labels = ["STR", "INT", "CHA", "WIL", "WIS"]
+            stat_values = [1, 1, 1, 1, 1]
 
         # 2. Simple Metrics
         today = timezone.now().date()
@@ -34,8 +50,8 @@ class IndexView(LoginRequiredMixin, TemplateView):
                 # TODO: Make this 'consecutive days'
                 "streak": DayPage.objects.filter(user=user).count(),
                 # Convert attributes to lists for Chart.js
-                "stat_labels": [attr.name for attr in attributes],
-                "stat_values": [attr.value for attr in attributes],
+                "stat_labels": stat_labels,
+                "stat_values": stat_values,
             }
         )
 

@@ -99,7 +99,7 @@ DATABASES = {
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.PlayerAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -138,3 +138,8 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     # OTHER SETTINGS
 }
+
+# Auth Redirects
+LOGIN_URL = "login"  # If not logged in, go here
+LOGIN_REDIRECT_URL = "gate:index"  # After login, go here (Index Page)
+LOGOUT_REDIRECT_URL = "login"  # After logout, go back to login
