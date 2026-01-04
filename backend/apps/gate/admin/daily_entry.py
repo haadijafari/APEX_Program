@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from apps.gate.models.daily_entry import DayPage
 
 
 @admin.register(DayPage)
-class DayPageAdmin(admin.ModelAdmin):
+class DayPageAdmin(ModelAdmin):
     list_display = ("date", "user", "rating", "emoji", "created_at")
     list_filter = ("date", "rating", "emoji")
     search_fields = ("quote", "lesson_of_day", "positives")

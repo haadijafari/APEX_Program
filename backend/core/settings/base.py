@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from django.urls import reverse_lazy
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,6 +20,12 @@ AUTH_USER_MODEL = "accounts.User"
 
 # Application definition
 INSTALLED_APPS = [
+    # Django Admin Panel Theme
+    "unfold",
+    "unfold.contrib.filters",  # Optional: Adds nice sidebar filters
+    "unfold.contrib.forms",  # Optional: nicer forms
+    "unfold.contrib.import_export",  # Optional: if you use django-import-export
+    # Django Apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -143,3 +150,34 @@ SPECTACULAR_SETTINGS = {
 LOGIN_URL = "login"  # If not logged in, go here
 LOGIN_REDIRECT_URL = "gate:index"  # After login, go here (Index Page)
 LOGOUT_REDIRECT_URL = "login"  # After logout, go back to login
+
+# Unfold Admin Panel Settings
+UNFOLD = {
+    "SITE_TITLE": "Apex Program",
+    "SITE_HEADER": "Apex Admin",
+    "SITE_URL": "/",
+    # "SITE_ICON": lambda request: static("icon.svg"),  # optional
+    # "DASHBOARD_CALLBACK": "apps.core.views.dashboard_callback",  # render custom charts or stats on the admin homepage
+    "SIDEBAR": {
+        "show_search": True,  # Search in applications and models names
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Navigation",
+                "separator": True,  # Top border
+                "items": [
+                    {
+                        "title": "Gate",
+                        "icon": "home",  # Material Icon name
+                        "link": reverse_lazy("admin:gate_daypage_changelist"),
+                    },
+                    {
+                        "title": "Users",
+                        "icon": "people",
+                        "link": reverse_lazy("admin:accounts_user_changelist"),
+                    },
+                ],
+            },
+        ],
+    },
+}

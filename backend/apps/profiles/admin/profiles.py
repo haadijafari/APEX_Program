@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, StackedInline
 
 from apps.profiles.admin.stats import PlayerStatsInline
 from apps.profiles.models import PlayerProfile
 
 
-class PlayerProfileInline(admin.StackedInline):
+class PlayerProfileInline(StackedInline):
     """
     Inline to view/edit the Profile directly inside the User page.
     Note: We cannot show PlayerStats here because they are nested inside Profile.
@@ -17,7 +18,7 @@ class PlayerProfileInline(admin.StackedInline):
 
 
 @admin.register(PlayerProfile)
-class PlayerProfileAdmin(admin.ModelAdmin):
+class PlayerProfileAdmin(ModelAdmin):
     list_display = ["user", "level", "rank", "xp_percent_display"]
     list_filter = ["rank", "level"]
     search_fields = ["user__username", "user__email"]

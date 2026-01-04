@@ -16,6 +16,7 @@ dependencies = [
     { name = "django-recaptcha" },
     { name = "django-robots" },
     { name = "django-taggit" },
+    { name = "django-unfold" },
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
     { name = "jdatetime" },
@@ -45,6 +46,7 @@ requires-dist = [
     { name = "django-recaptcha", specifier = "==3.0.0" },
     { name = "django-robots", specifier = ">=6.1" },
     { name = "django-taggit", specifier = ">=6.1.0" },
+    { name = "django-unfold", specifier = ">=0.75.0" },
     { name = "djangorestframework", specifier = ">=3.16.0" },
     { name = "drf-spectacular", specifier = ">=0.28.0" },
     { name = "jdatetime", specifier = ">=5.2.0" },
@@ -223,6 +225,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/34/a6/f1beaf8f552fe90c153cc039316ebab942c23dfbc88588dde081fefca816/django_taggit-6.1.0.tar.gz", hash = "sha256:c4d1199e6df34125dd36db5eb0efe545b254dec3980ce5dd80e6bab3e78757c3", size = 38151, upload-time = "2024-09-29T08:07:39.477Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6b/34/4185c345530b91d05cb82e05d07148f481a5eb5dc2ac44e092b3daa6f206/django_taggit-6.1.0-py3-none-any.whl", hash = "sha256:ab776264bbc76cb3d7e49e1bf9054962457831bd21c3a42db9138b41956e4cf0", size = 75749, upload-time = "2024-09-29T08:07:14.612Z" },
+]
+
+[[package]]
+name = "django-unfold"
+version = "0.75.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5c/d3/042b5a20c9078efeafb5830be32fdc2c7e258ce1fa011ec4e96f45550fe9/django_unfold-0.75.0.tar.gz", hash = "sha256:5b55e5f9a72ba8a2b038317ea0ab4ff183098ac4db294913115d0362a62e14af", size = 1102853, upload-time = "2026-01-02T09:35:04.834Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/35/02/fa76a4579eeba7ae85daec9b6553a4af62a3e6bc43e993a344e420ad8363/django_unfold-0.75.0-py3-none-any.whl", hash = "sha256:1fa6d1ca4ffea27a3fe10a71a0fce348d41c211c1c307bef2e8c6a02ff41f8f3", size = 1218603, upload-time = "2026-01-02T09:35:03.312Z" },
 ]
 
 [[package]]

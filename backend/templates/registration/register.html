@@ -2,40 +2,47 @@
 
 {% block content %}
 <div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
+    <div class="card shadow p-4 border-secondary" style="max-width: 400px; width: 100%;">
         <div class="card-body">
-            <h3 class="card-title text-center mb-4">Join the Program</h3>
+            <h3 class="card-title text-center mb-2">Join the Program</h3>
+            <p class="text-center text-muted mb-4 small">Begin your progression today.</p>
             
             <form method="post">
                 {% csrf_token %}
                 
+                {# General Form Errors (e.g. Passwords don't match) #}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger small p-2">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
                 {% for field in form %}
                 <div class="mb-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }} {% if field.help_text %}
-                    <div class="form-text small text-muted">{{ field.help_text }}</div>
+                    <label class="form-label small text-uppercase text-secondary fw-bold">{{ field.label }}</label>
+                    {{ field }}
+                    
+                    {% if field.help_text %}
+                    <div class="form-text small text-muted">{{ field.help_text|safe }}</div>
                     {% endif %}
+                    
                     {% for error in field.errors %}
-                    <div class="text-danger small">{{ error }}</div>
+                    <div class="text-danger small mt-1">{{ error }}</div>
                     {% endfor %}
                 </div>
                 {% endfor %}
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-success">Create Account</button>
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-success text-white fw-bold">CREATE ACCOUNT</button>
                 </div>
             </form>
 
-            <div class="mt-3 text-center">
-                <small>Already have an account? <a href="{% url 'login' %}">Login</a></small>
+            <div class="mt-4 text-center border-top border-secondary pt-3">
+                <small class="text-muted">Already initialized? <a href="{% url 'login' %}" class="text-decoration-none text-success fw-bold">Login</a></small>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    document.querySelectorAll('input').forEach(input => {
-        input.classList.add('form-control');
-    });
-</script>
 {% endblock %}
