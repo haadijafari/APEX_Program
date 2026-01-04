@@ -1,0 +1,30 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+    (function() {
+        // Check if the user has a saved preference
+        const savedTheme = localStorage.getItem('theme');
+
+        // IF (and only if) there is NO saved preference, force Dark Mode
+        if (!savedTheme) {
+            // 1. Apply the dark theme attribute immediately to the HTML tag
+            document.documentElement.setAttribute('data-theme', 'dark');
+            
+            // 2. Save 'dark' to localStorage so the toggle button knows the state
+            //    and so this default sticks until they manually change it.
+            localStorage.setItem('theme', 'dark');
+        }
+        
+        // ELSE: If 'savedTheme' is 'light' (or 'auto'), we do nothing.
+        // Django's default script will read that value and respect the user's choice.
+    })();
+</script>
+<style>
+    /* Ensure the scrollbars and other native elements respect dark mode */
+    :root {
+        color-scheme: dark;
+    }
+</style>
+{% endblock %}
