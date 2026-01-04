@@ -12,4 +12,9 @@ urlpatterns = [
         views.toggle_habit_log,
         name="toggle_habit_log",
     ),
+    path(
+        "routine/toggle/<int:item_id>/",
+        views.toggle_routine_log,
+        name="toggle_routine_log",
+    ),
 ]

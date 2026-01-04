@@ -1,12 +1,13 @@
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import F, Max
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
 class Routine(models.Model):
     """
-    A collection of tasks (Routine Items).
+    A collection of tasks (Routine Items) with a schedule.
     """
 
     class Frequency(models.TextChoices):
@@ -205,3 +206,21 @@ class RoutineItem(models.Model):
             RoutineItem.objects.filter(
                 routine=current_routine, priority__gt=current_priority
             ).update(priority=F("priority") - 1)
+
+
+class RoutineLog(models.Model):
+    """
+    Records when a routine item is checked off.
+    """
+
+    routine = models.ForeignKey(Routine, on_delete=models.CASCADE, related_name="logs")
+    item = models.ForeignKey(RoutineItem, on_delete=models.CASCADE, related_name="logs")
+    completed_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-completed_at"]
+        verbose_name = "Routine Log"
+        verbose_name_plural = "Routine Logs"
+
+    def __str__(self):
+        return f"{self.item} - {self.completed_at}"

@@ -155,3 +155,50 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
+
+// Function to toggle routine items
+function toggleRoutineItem(itemId) {
+    const url = `/routine/toggle/${itemId}/`;
+
+    // We need to get the CSRF token from the cookie or the page
+    // Assuming you have a helper or meta tag, otherwise here is a standard way:
+    const csrftoken = getCookie('csrftoken');
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        },
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        console.log(`Item ${data.item_id} status: ${data.status}`);
+    })
+    .catch(error => {
+        console.error('Error toggling routine item:', error);
+        // Optional: Revert checkbox state if error
+        const checkbox = document.getElementById(`item${itemId}`);
+        if (checkbox) checkbox.checked = !checkbox.checked;
+    });
+}
+
+// Helper to get CSRF token (if not already present in your main.js)
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
