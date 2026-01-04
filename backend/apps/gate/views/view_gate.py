@@ -34,7 +34,7 @@ def gate_view(request):
     # Fetch Routines (for display)
     routines = Routine.objects.filter(
         profile__user=request.user, is_active=True
-    ).prefetch_related("routine_items")
+    ).prefetch_related("items")
 
     context = {
         "day_page": day_page,

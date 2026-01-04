@@ -2,14 +2,14 @@
 {% for routine in routines %}
     <div class="card mb-3 border-secondary shadow-sm">
         <div class="card-header fw-bold border-secondary">
-            {{ routine.name }}
+            {{ routine.title }}
         </div>
         <ul class="list-group list-group-flush">
-            {% for item in routine.routine_items.all %}
+            {% for item in routine.items.all %}
                 <li class="list-group-item d-flex align-items-center">
                     <input class="form-check-input me-2" type="checkbox" value="" id="item{{item.id}}">
                     <label class="form-check-label stretched-link text-reset" for="item{{item.id}}">
-                        {{ item.title }}
+                        {{ item.task.title }}
                     </label>
                 </li>
             {% endfor %}

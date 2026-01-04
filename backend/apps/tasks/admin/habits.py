@@ -46,7 +46,7 @@ class HabitAdmin(ModelAdmin):
 
     # Inject the JavaScript file
     class Media:
-        js = ("js/admin_habits.js",)
+        js = ("js/admin_tasks.js",)
 
     def get_title(self, obj):
         return obj.task.title

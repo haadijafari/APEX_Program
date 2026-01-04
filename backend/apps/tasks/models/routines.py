@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import F, Max
 from django.utils.translation import gettext_lazy as _
@@ -8,15 +9,42 @@ class Routine(models.Model):
     A collection of tasks (Routine Items).
     """
 
+    class Frequency(models.TextChoices):
+        DAILY = "DAILY", _("Daily")
+        WEEKLY = "WEEKLY", _("Weekly")
+        MONTHLY = "MONTHLY", _("Monthly")
+
     profile = models.ForeignKey(
         "profiles.PlayerProfile", on_delete=models.CASCADE, related_name="routines"
     )
     title = models.CharField(_("Title"), max_length=100)
     description = models.TextField(_("Description"), blank=True)
 
-    # e.g., Morning, Evening
-    # TODO: Define structure for schedule_config
-    schedule_config = models.JSONField(_("Schedule Config"), default=dict, blank=True)
+    # --- Scheduling ---
+    frequency = models.CharField(
+        _("Frequency"),
+        max_length=10,
+        choices=Frequency.choices,
+        default=Frequency.DAILY,
+    )
+
+    interval = models.PositiveIntegerField(
+        _("Repeat Every"),
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text=_("e.g. 1 for 'Every Day', 2 for 'Every 2 Days'"),
+    )
+
+    # Weekdays: JSON list of integers.
+    # Definition matches Habit model (0=Sat, 6=Fri for Jalali context usually, or 0=Mon depending on implementation)
+    weekdays = models.JSONField(
+        _("On Days"),
+        default=list,
+        blank=True,
+        help_text=_("Select specific days for Weekly frequency."),
+    )
+
+    time_of_day = models.TimeField(_("Time"), null=True, blank=True)
 
     # --- Status ---
     is_active = models.BooleanField(
@@ -87,7 +115,7 @@ class RoutineItem(models.Model):
 
     def __str__(self):
         # Removed the 'if self.priority == 100' as 100 is no longer the default
-        return f"{self.priority} | {self.title}"
+        return f"{self.priority} | {self.task.title}"
 
     def save(self, *args, **kwargs):
         # --- Priority Standardize ---
