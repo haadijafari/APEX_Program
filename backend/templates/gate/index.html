@@ -2,34 +2,165 @@
 {% load static %}
 
 {% block content %}
-<div class="row g-4 mb-4">
-    <div class="col-lg-4 col-md-12">
-        {% include 'gate/includes/index_player_card.html' %}
+<div class="container-fluid p-4">
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6 col-xl-7">
+             {% include 'gate/includes/index_calendar.html' %}
+        </div>
+
+        <div class="col-lg-6 col-xl-5">
+            {% include 'gate/includes/index_stats_radar.html' %}
+        </div>
     </div>
 
-    <div class="col-lg-5 col-md-7">
-        {% include 'gate/includes/index_stats_radar.html' %}
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-secondary shadow-sm">
+                <div class="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center">
+                    <span class="text-secondary text-uppercase small ls-1">Habit Tracker</span>
+                    <span class="fw-bold text-system">{{ current_month_name }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-borderless table-sm mb-0 text-center align-middle">
+                            <thead>
+                                <tr>
+                                    <th class="text-start ps-3 text-muted" style="min-width: 150px;">Habit</th>
+                                    {% for day in month_days %}
+                                        <th class="small text-secondary fw-light" style="width: 28px;">{{ day }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for habit in habit_grid %}
+                                <tr>
+                                    <td class="text-start ps-3 fw-bold text-light">{{ habit.title }}</td>
+                                    {% for status in habit.status %}
+                                        <td>
+                                            {% if status %}
+                                                <span class="text-system">●</span> {% else %}
+                                                <span class="text-secondary opacity-25">·</span>
+                                            {% endif %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="32" class="text-muted py-3">No active habits found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="col-lg-3 col-md-5">
-        {% include 'gate/includes/index_action_card.html' %}
-    </div>
-</div>
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100 border-secondary shadow-sm">
+                <div class="card-header border-secondary bg-transparent">
+                    <span class="text-secondary text-uppercase small ls-1">Sleep Rhythm</span>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="sleepChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<div class="row">
-    <div class="col-12">
-        {% include 'gate/includes/index_calendar.html' %}
+        <div class="col-lg-6">
+            <div class="card h-100 border-secondary shadow-sm">
+                <div class="card-header border-secondary bg-transparent">
+                    <span class="text-secondary text-uppercase small ls-1">Daily Discipline</span>
+                </div>
+                <div class="card-body">
+                    <div style="height: 250px;">
+                        <canvas id="habitCountChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script src="{% static 'js/stats.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Pass Django variables into the function here
-        const labels = {{ stat_labels|safe }};
-        const values = {{ stat_values|safe }};
+        // 1. Render Existing Radar
+        const statLabels = {{ stat_labels|safe }};
+        const statValues = {{ stat_values|safe }};
+        renderStatsChart(statLabels, statValues);
+
+        const styles = getComputedStyle(document.documentElement);
+        const primaryColor = styles.getPropertyValue('--apex-primary').trim() || '#0d6efd';
+        const primaryRgb = styles.getPropertyValue('--apex-primary-rgb').trim() || '13, 110, 253';
         
-        renderStatsChart(labels, values);
+        const daysLabels = {{ month_days|safe }};
+
+        // 2. Render Sleep Chart (Smooth Area)
+        const sleepData = {{ sleep_data|safe }};
+        new Chart(document.getElementById('sleepChart'), {
+            type: 'line',
+            data: {
+                labels: daysLabels,
+                datasets: [{
+                    label: 'Sleep Duration (hrs)',
+                    data: sleepData,
+                    borderColor: primaryColor,
+                    backgroundColor: `rgba(${primaryRgb}, 0.1)`,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4, // Smooth curve
+                    pointRadius: 2,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#333' },
+                        suggestedMax: 10
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // 3. Render Habit Count Chart (Bar)
+        const habitCountData = {{ habit_counts_data|safe }};
+        new Chart(document.getElementById('habitCountChart'), {
+            type: 'bar',
+            data: {
+                labels: daysLabels,
+                datasets: [{
+                    label: 'Habits Completed',
+                    data: habitCountData,
+                    backgroundColor: primaryColor,
+                    borderRadius: 2,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#333' },
+                        ticks: { stepSize: 1 }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
     });
 </script>
 
