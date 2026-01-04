@@ -93,4 +93,65 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ==========================================
+    // 3. SCORE BAR VISUALS (Fill Effect)
+    // ==========================================
+    const scoreContainer = document.getElementById('score-container');
+    
+    function updateScoreVisuals() {
+        if (!scoreContainer) return;
+        
+        // Find which radio is currently checked
+        const checkedInput = scoreContainer.querySelector('input[type="radio"]:checked');
+        const currentVal = checkedInput ? parseInt(checkedInput.value) : 0;
+
+        // Loop through all labels and add/remove 'is-active' class
+        const labels = scoreContainer.querySelectorAll('.score-label');
+        labels.forEach(label => {
+            const labelVal = parseInt(label.getAttribute('data-value'));
+            if (labelVal <= currentVal) {
+                label.classList.add('is-active');
+            } else {
+                label.classList.remove('is-active');
+            }
+        });
+    }
+
+    // Run on load (in case of validation error/reload)
+    updateScoreVisuals();
+
+    // Run on change
+    if (scoreContainer) {
+        scoreContainer.addEventListener('change', updateScoreVisuals);
+    }
+
+    // ==========================================
+    // 4. MOOD SLOT VISUALS
+    // ==========================================
+    // Updates the border glow when an emoji is present
+    const moodInput = document.getElementById('mood-picker-input');
+    const moodSlotContainer = document.getElementById('mood-slot-container');
+
+    function updateMoodVisuals() {
+        if (moodInput && moodInput.value) {
+            moodSlotContainer.classList.add('has-mood');
+        } else if (moodSlotContainer) {
+            moodSlotContainer.classList.remove('has-mood');
+        }
+    }
+
+    if (moodInput) {
+        // Run on load
+        updateMoodVisuals();
+        
+        // We need to hook into the emoji picker click event we defined earlier
+        const pickerElement = document.querySelector('emoji-picker');
+        if (pickerElement) {
+            pickerElement.addEventListener('emoji-click', () => {
+                // Small delay to allow value to populate
+                setTimeout(updateMoodVisuals, 50);
+            });
+        }
+    }
 });

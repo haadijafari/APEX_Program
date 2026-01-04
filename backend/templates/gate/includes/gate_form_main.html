@@ -40,7 +40,7 @@
                 <div class="col-lg-9 col-md-8">
                     <label class="form-label text-secondary small text-uppercase d-block">Performance Score</label>
                     
-                    <div class="system-score-container">
+                    <div class="system-score-container" id="score-container">
                         {% for radio in form.rating %}
                             <input 
                                 type="radio" 
@@ -51,8 +51,8 @@
                                 {% if radio.data.selected %}checked{% endif %}
                             >
                             
-                            <label class="score-label rounded-1" for="{{ radio.id_for_label }}">
-                                <span>{{ radio.choice_label }}</span>
+                            <label class="score-label" for="{{ radio.id_for_label }}" data-value="{{ radio.data.value }}">
+                                {{ radio.choice_label }}
                             </label>
                         {% endfor %}
                     </div>

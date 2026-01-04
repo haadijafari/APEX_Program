@@ -6,50 +6,84 @@
 
 .system-score-container {
     display: flex;
-    gap: 4px;
+    gap: 2px; /* Tight spacing for a bar look */
     width: 100%;
+    background: #111;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
 }
 
 /* NUCLEAR OPTION: Force hide the default radio buttons */
-/* We target the class AND the type to be specific */
-input[type="radio"].score-input {
+/* Target ANY radio button inside the container */
+.system-score-container input[type="radio"] {
     display: none !important;
     opacity: 0 !important;
     position: absolute !important;
     z-index: -1;
+    width: 0;
+    height: 0;
+    margin: 0;
+    -webkit-appearance: none; /* Extra safety for Safari/Chrome */
+    appearance: none;
 }
 
 .score-label {
-    flex: 1; /* Distribute width equally */
+    flex: 1;
     text-align: center;
-    padding: 12px 0;
+    padding: 10px 0;
     
-    /* Dark Theme Colors */
-    background-color: #1a1a1a; 
-    border: 1px solid #333;
-    color: #6c757d;
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    color: #444; /* Dim text by default */
     
     cursor: pointer;
-    font-family: monospace;
-    font-weight: bold;
-    font-size: 1.1rem;
-    transition: all 0.2s ease-in-out;
+    font-family: 'Segoe UI', monospace; /* Tech font */
+    font-weight: 800;
+    font-size: 1rem;
+    border-radius: 2px;
+    
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
-/* Hover Effect */
+/* Hovering over a specific box */
 .score-label:hover {
-    border-color: var(--apex-primary, #0d6efd); 
-    color: var(--apex-primary, #0d6efd);
-    background-color: #222;
+    background-color: #252525;
+    color: #888;
+    transform: translateY(-1px);
 }
 
-/* The "Checked" State - When you click a number */
-/* This selects the label immediately following the checked invisible input */
-input.score-input:checked + .score-label {
-    background-color: var(--apex-primary, #0d6efd);
+.score-label.is-active {
+    background: linear-gradient(180deg, rgba(13, 110, 253, 0.2) 0%, rgba(13, 110, 253, 0.1) 100%);
     border-color: var(--apex-primary, #0d6efd);
-    color: #fff; /* White text when active */
-    box-shadow: 0 0 15px rgba(13, 110, 253, 0.4);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(13, 110, 253, 0.3), inset 0 0 5px rgba(13, 110, 253, 0.2);
+    text-shadow: 0 0 5px rgba(13, 110, 253, 0.8);
+}
+
+/* Optional: Color grading for low/med/high scores */
+/* Low (1-4) */
+.score-label.is-active[data-value="1"],
+.score-label.is-active[data-value="2"],
+.score-label.is-active[data-value="3"],
+.score-label.is-active[data-value="4"] {
+    border-color: #dc3545; /* Red */
+    background: linear-gradient(180deg, rgba(220, 53, 69, 0.2) 0%, rgba(220, 53, 69, 0.1) 100%);
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
+    text-shadow: 0 0 5px rgba(220, 53, 69, 0.8);
+}
+/* Med (5-7) */
+.score-label.is-active[data-value="5"],
+.score-label.is-active[data-value="6"],
+.score-label.is-active[data-value="7"] {
+    border-color: #ffc107; /* Yellow */
+    color: #fff;
+    background: linear-gradient(180deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
+    text-shadow: 0 0 5px rgba(255, 193, 7, 0.8);
 }
 
 
@@ -58,56 +92,64 @@ input.score-input:checked + .score-label {
    ========================================= */
 
 .mood-wrapper {
-    position: relative;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-/* The Container Box */
 .mood-slot {
-    /* Flex allows it to fill the height of the row automatically */
-    flex: 1; 
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     
+    /* Glass / HUD look */
     background-color: #111;
-    border: 2px dashed #444; /* Thicker dash for better visibility */
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
     
     cursor: pointer;
-    position: relative; /* CRITICAL: Anchors the popup */
-    min-height: 56px; /* Matches the height of score buttons approx */
+    position: relative;
+    min-height: 56px; /* Matches score bar */
+    transition: all 0.3s ease;
 }
 
 .mood-slot:hover {
-    border-color: var(--apex-primary, #0d6efd);
+    border-color: #555;
     background-color: #161616;
 }
 
-/* The Text Input (Hidden visual style) */
+/* When a mood is actually selected (Input has value) */
+.mood-slot.has-mood {
+    border-color: var(--apex-primary, #0d6efd);
+    box-shadow: 0 0 15px rgba(13, 110, 253, 0.2), inset 0 0 10px rgba(13, 110, 253, 0.1);
+}
+
 .mood-input-styled {
     background: transparent !important;
     border: none !important;
     color: white !important;
     text-align: center;
-    font-size: 2rem;
+    font-size: 2.2rem; /* Larger Emoji */
     width: 100%;
     height: 100%;
     cursor: pointer;
     padding: 0;
     outline: none !important;
-    box-shadow: none !important;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); /* Glowy Emoji */
 }
 
 .mood-label-text {
     position: absolute;
-    top: 4px;
-    left: 6px;
-    font-size: 0.65rem;
+    top: 6px;
+    left: 8px;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    color: #666;
+    letter-spacing: 1px;
+    color: #555;
     pointer-events: none;
+    font-weight: 700;
 }
 
 
