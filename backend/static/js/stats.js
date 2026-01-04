@@ -9,6 +9,10 @@ function renderStatsChart(labels, dataValues) {
     const primaryColor = styles.getPropertyValue('--apex-primary').trim();
     const primaryRgb = styles.getPropertyValue('--apex-primary-rgb').trim();
 
+    // Calculate the scale: Max stat level + 1
+    const maxLevel = Math.max(...dataValues);
+    const scaleMax = maxLevel + 1;
+
     new Chart(ctx, {
         type: 'radar',
         data: {
@@ -36,7 +40,7 @@ function renderStatsChart(labels, dataValues) {
                     },
                     ticks: { display: false, backdropColor: 'transparent' },
                     suggestedMin: 0,
-                    suggestedMax: 20 // Keeps the chart looking good even with low stats
+                    suggestedMax: scaleMax // Dynamic scale based on highest stat + 1
                 }
             },
             plugins: {
