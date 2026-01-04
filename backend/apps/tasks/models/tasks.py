@@ -103,7 +103,12 @@ class Task(models.Model):
     updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 
     def __str__(self):
-        return f"[{self.get_rank_display()}] {self.title}"
+        if self.manual_rank:
+            rank_label = self.get_manual_rank_display()
+        else:
+            rank_label = self.get_computed_rank_display()
+
+        return f"[{rank_label}] {self.title}"
 
     @property
     def final_rank(self):
