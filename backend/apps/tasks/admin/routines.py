@@ -1,9 +1,10 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.tasks.models import Routine, RoutineItem
 
 
-class RoutineItemInline(admin.TabularInline):
+class RoutineItemInline(TabularInline):
     model = RoutineItem
     extra = 1
     autocomplete_fields = ["task"]  # Uses TaskAdmin search_fields
@@ -12,7 +13,7 @@ class RoutineItemInline(admin.TabularInline):
 
 
 @admin.register(Routine)
-class RoutineAdmin(admin.ModelAdmin):
+class RoutineAdmin(ModelAdmin):
     list_display = ["title", "profile", "item_count", "is_active"]
     list_filter = ["is_active", "profile"]
     search_fields = ["title", "profile__user__username"]
@@ -26,7 +27,7 @@ class RoutineAdmin(admin.ModelAdmin):
 
 
 @admin.register(RoutineItem)
-class RoutineItemAdmin(admin.ModelAdmin):
+class RoutineItemAdmin(ModelAdmin):
     # We use 'task__title' to show the linked task's name
     list_display = ("get_task_title", "routine", "priority", "is_active", "created_at")
     list_filter = ("is_active", "routine")
