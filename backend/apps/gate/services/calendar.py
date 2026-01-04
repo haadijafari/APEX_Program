@@ -5,34 +5,60 @@ import jdatetime
 from apps.gate.models.daily_entry import DayPage
 
 
+def get_current_month_info():
+    """
+    Calculates the boundaries and length of the current Jalali month.
+    Returns a dict with Gregorian and Jalali details reusable by Views.
+    """
+    j_today = jdatetime.date.today()
+
+    # 1. Get the first day of the current Jalali month
+    j_month_start = j_today.replace(day=1)
+
+    # 2. Calculate days in month (handling year rollover and leap years automatically)
+    if j_today.month == 12:
+        j_next_month = jdatetime.date(j_today.year + 1, 1, 1)
+    else:
+        j_next_month = jdatetime.date(j_today.year, j_today.month + 1, 1)
+
+    days_in_month = (j_next_month - j_month_start).days
+
+    # 3. Gregorian Boundaries for DB Queries
+    g_start = j_month_start.togregorian()
+    g_end = (j_next_month - timedelta(days=1)).togregorian()
+
+    return {
+        "j_today": j_today,
+        "j_month_start": j_month_start,
+        "days_in_month": days_in_month,
+        "g_start": g_start,
+        "g_end": g_end,
+        "month_days": list(range(1, days_in_month + 1)),  # [1, 2, ... 30]
+    }
+
+
 def get_jalali_calendar_context(user):
     """
     Generates the data structure for the Jalali calendar grid (Heatmap).
     Returns a dictionary ready to be merged into the view context.
     """
-    j_today = jdatetime.date.today()
-    # jdatetime handles the names correctly (e.g., "Azar", "Aban")
+    # Reuse the central logic
+    month_info = get_current_month_info()
+
+    j_today = month_info["j_today"]
+    j_month_start = month_info["j_month_start"]
+    days_in_month = month_info["days_in_month"]
+
     current_month_str = j_today.strftime("%B %Y")
 
-    # 1. Get the first day of the current Jalali month
-    first_day_of_month = j_today.replace(day=1)
-
-    # 2. Calculate days in month (handling year rollover)
-    if j_today.month == 12:
-        next_month_start = jdatetime.date(j_today.year + 1, 1, 1)
-    else:
-        next_month_start = jdatetime.date(j_today.year, j_today.month + 1, 1)
-
-    month_length = (next_month_start - first_day_of_month).days
-
-    # 3. Prepare the grid (Empty slots for start of week)
+    # Prepare the grid (Empty slots for start of week)
     # 0=Sat, 1=Sun, ..., 6=Fri
-    start_weekday = first_day_of_month.weekday()
+    start_weekday = j_month_start.weekday()
     calendar_days = [None] * start_weekday
 
-    # 4. Fill in the actual days
-    for day in range(1, month_length + 1):
-        date_obj = first_day_of_month + timedelta(days=day - 1)
+    # Fill in the actual days
+    for day in range(1, days_in_month + 1):
+        date_obj = j_month_start + timedelta(days=day - 1)
 
         # Check database for log (Heatmap logic)
         g_date = date_obj.togregorian()
