@@ -1,11 +1,20 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
+from django.db.models import F, Max, Sum
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.profiles.models import PlayerStats
 
 
 class Task(models.Model):
+    """
+    The central atom of the system.
+    - Single standalone task.
+    - "Routine" (a container task) if it has subtasks and has a linked TaskSchedule.
+    - "Habit" if it has a linked TaskSchedule.
+    """
+
     class Rank(models.TextChoices):
         E_RANK = "E", "E-Rank"
         D_RANK = "D", "D-Rank"
@@ -18,6 +27,21 @@ class Task(models.Model):
 
     profile = models.ForeignKey(
         "profiles.PlayerProfile", on_delete=models.CASCADE, related_name="tasks"
+    )
+
+    # --- Hierarchy (The Composite Pattern) ---
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="subtasks",
+        help_text=_("If set, this task will be a subtask"),
+    )
+
+    # Order within the routine (0, 1, 2...)
+    order = models.PositiveIntegerField(
+        default=0, help_text=_("Order of execution within the routine.")
     )
 
     title = models.CharField(_("Title"), max_length=255)
@@ -42,6 +66,7 @@ class Task(models.Model):
         help_text=_("Optional. If set, it receives 40% of the XP."),
     )
 
+    # --- Complexity ---
     # --- Complexity Math ---
     duration_minutes = models.PositiveIntegerField(
         _("Duration Minutes"),
@@ -76,7 +101,7 @@ class Task(models.Model):
         ),
     )
 
-    # --- Ranking ---
+    # --- Ranks ---
     # TODO: XP amount shown in UI for rank selection
     manual_rank = models.CharField(
         _("Manual Rank"), max_length=10, choices=Rank.choices, blank=True, null=True
@@ -91,24 +116,40 @@ class Task(models.Model):
     )
 
     # --- Status ---
-    is_completed = models.BooleanField(_("Is Completed?"), default=False)
-    completed_at = models.DateTimeField(_("Completed At"), null=True, blank=True)
-
-    # --- Types ---
-    is_habit = models.BooleanField(_("Is Habit?"), default=False)
-    is_routine_item = models.BooleanField(_("Is Routine Item?"), default=False)
+    # is_active controls visibility. If False, it's archived.
+    is_active = models.BooleanField(
+        _("Is Active?"),
+        default=True,
+        help_text=_("Uncheck to archive or hide this item."),
+    )
 
     # --- Timestamps ---
     created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
     updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
 
-    def __str__(self):
-        if self.manual_rank:
-            rank_label = self.get_manual_rank_display()
-        else:
-            rank_label = self.get_computed_rank_display()
+    class Meta:
+        ordering = ["order", "created_at"]
+        verbose_name = _("Task")
+        verbose_name_plural = _("Tasks")
 
-        return f"[{rank_label}] {self.title}"
+    def __str__(self):
+        prefix = "-- " if self.parent else ""
+        return f"{prefix}[{self.final_rank}] {self.title}"
+
+    # --- Properties ---
+    @property
+    def is_routine(self):
+        """
+        Returns True if:
+        1. this task acts as a container for other tasks.
+        2. It has linked TaskSchedule
+        """
+        return self.subtasks.exists() and hasattr(self, "schedule")
+
+    @property
+    def is_habit(self):
+        """Returns True if this task has a recurring schedule."""
+        return hasattr(self, "schedule")
 
     @property
     def final_rank(self):
@@ -129,7 +170,8 @@ class Task(models.Model):
             self.Rank.SS_RANK: 1200,
             self.Rank.MONARCH: 1500,
         }
-        return rank_xp.get(self.final_rank, 15)
+        base_xp = rank_xp.get(self.final_rank, 15)
+        return base_xp
 
     @property
     def xp_distribution(self):
@@ -153,12 +195,12 @@ class Task(models.Model):
             self.secondary_stat: secondary_amount,
         }
 
+    # --- Methods ---
     def calculate_score(self):
-        # Score = [(Duration * 0.25) + (Effort * 1.5) + (Impact^3)] * FearFactor
-        duration_score = min(
-            self.duration_minutes, 240
-        )  # Cap at 4 hours logic if needed, or simple scaling
-        # (Simplified logic based on scenario mapping)
+        """
+        Score = [(Duration * 0.25) + (Effort * 1.5) + (Impact^3)] * FearFactor
+        """
+        duration_score = min(self.duration_minutes, 240)
         base = (
             (duration_score * 0.25) + (self.effort_level * 1.5) + (self.impact_level**3)
         )
@@ -169,12 +211,14 @@ class Task(models.Model):
         if self.title:
             self.title = self.title.strip().title()
 
-        # --- Sanity Check: Prevent redundant secondary stat ---
-        # If user selects the same stat for both, treat it as Single Stat (100% Primary)
+        # --- Sanity Check ---
+        # Prevent redundant secondary stat
+        # If user selects the same stat for both,
+        # treat it as Single Stat (100% Primary)
         if self.secondary_stat == self.primary_stat:
             self.secondary_stat = None
 
-        # Calculate and set computed rank before saving
+        # --- Rank Calculation ---
         score = self.calculate_score()
         if score <= 20:
             self.computed_rank = self.Rank.E_RANK
@@ -194,3 +238,80 @@ class Task(models.Model):
             self.computed_rank = self.Rank.MONARCH
 
         super().save(*args, **kwargs)
+
+
+class TaskSchedule(models.Model):
+    """
+    Defines the recurrence rules for a Task (or Routine).
+    If a Task has this, it regenerates/repeats (Logic handled in Views/Services).
+    """
+
+    class Frequency(models.TextChoices):
+        DAILY = "DAILY", _("Daily")
+        WEEKLY = "WEEKLY", _("Weekly")
+        MONTHLY = "MONTHLY", _("Monthly")
+        YEARLY = "YEARLY", _("Yearly")
+
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name="schedule")
+
+    frequency = models.CharField(
+        _("Frequency"),
+        max_length=10,
+        choices=Frequency.choices,
+        default=Frequency.DAILY,
+    )
+
+    interval = models.PositiveIntegerField(
+        _("Repeat Every"),
+        default=1,
+        help_text=_(
+            "e.g.\n"
+            "1 for 'Every Day/Week/Month/Year',\n"
+            "2 for 'Every 2 Day/Week/Month/Year'"
+        ),
+    )
+
+    # For Weekly: [0, 1] = Sat, Sun.
+    weekdays = models.JSONField(
+        _("On Days"),
+        default=list(range(0, 7)),
+        blank=True,
+        help_text=_("Select specific days for Weekly frequency."),
+    )
+
+    # Time of the Day
+    start_time = models.DateTimeField(_("Start Time"), null=True, blank=True)
+    end_time = models.DateTimeField(_("End Time"), null=True, blank=True)
+
+    # --- Streaks (Unified) ---
+    current_streak = models.PositiveIntegerField(_("Current Streak"), default=0)
+    longest_streak = models.PositiveIntegerField(_("Longest Streak"), default=0)
+
+    # Timestamps
+    created_at = models.DateTimeField(_("Created At"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Updated At"), auto_now=True)
+
+    def __str__(self):
+        return f"Schedule for {self.task.title} ({self.frequency})"
+
+
+class TaskLog(models.Model):
+    """
+    Unified History.
+    Tracks every time a Task (or Routine Item) is completed.
+    """
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="logs")
+    completed_at = models.DateTimeField(default=timezone.now)
+
+    # Snapshot of the reward at the moment of completion
+    # (In case you change the Task rank later, history remains accurate)
+    xp_earned = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-completed_at"]
+        verbose_name = "Task Log"
+        verbose_name_plural = "Task Logs"
+
+    def __str__(self):
+        return f"{self.task.title} @ {self.completed_at.strftime('%Y-%m-%d %H:%M')}"

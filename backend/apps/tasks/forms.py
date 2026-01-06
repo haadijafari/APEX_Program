@@ -1,10 +1,10 @@
 from django import forms
 from unfold.widgets import UnfoldAdminCheckboxSelectMultiple
 
-from apps.tasks.models import Habit
+from apps.tasks.models import TaskSchedule
 
 
-class HabitAdminForm(forms.ModelForm):
+class TaskScheduleAdminForm(forms.ModelForm):
     # Define the checkboxes with integer values
     DAYS_CHOICES = [
         (0, "Saturday"),
@@ -19,14 +19,13 @@ class HabitAdminForm(forms.ModelForm):
     # Override the model field with a MultipleChoiceField
     weekdays = forms.MultipleChoiceField(
         choices=DAYS_CHOICES,
-        # widget=forms.CheckboxSelectMultiple,  # This renders as checkboxes
         widget=UnfoldAdminCheckboxSelectMultiple,
         required=False,
         help_text="Select the days this habit should occur.",
     )
 
     class Meta:
-        model = Habit
+        model = TaskSchedule
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):

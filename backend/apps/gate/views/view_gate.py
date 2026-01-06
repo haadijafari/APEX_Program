@@ -7,7 +7,7 @@ from django.views.decorators.http import require_POST
 
 from apps.gate.forms import DayPageForm
 from apps.gate.models.daily_entry import DayPage
-from apps.tasks.models import Routine, RoutineItem, RoutineLog
+from apps.tasks.models import Task, TaskLog
 
 
 @login_required
@@ -33,24 +33,29 @@ def gate_view(request):
     else:
         form = DayPageForm(instance=day_page)
 
-    # 1. Fetch Routines
-    routines = Routine.objects.filter(
-        profile__user=request.user, is_active=True
-    ).prefetch_related("items__task")  # Prefetch items and their tasks
+    # 1. Fetch Top-Level Tasks (Routines & Standalone Tasks)
+    tasks = (
+        Task.objects.filter(
+            profile__user=request.user, is_active=True, parent__isnull=True
+        )
+        .prefetch_related("subtasks")
+        .select_related("schedule")
+        .order_by("order", "created_at")
+    )
 
     # 2. Fetch Completed Items for TODAY
-    # We get a set of IDs for all items logged today
-    completed_item_ids = set(
-        RoutineLog.objects.filter(
-            item__routine__in=routines, completed_at__date=today
-        ).values_list("item_id", flat=True)
+    # We fetch ALL logs for this user today (Parents AND Children)
+    completed_task_ids = set(
+        TaskLog.objects.filter(
+            task__profile__user=request.user, completed_at__date=today
+        ).values_list("task_id", flat=True)
     )
 
     context = {
         "day_page": day_page,
         "form": form,
-        "routines": routines,
-        "completed_item_ids": completed_item_ids,
+        "tasks": tasks,
+        "completed_task_ids": completed_task_ids,
         "today": today,
         "jalali_date_str": jalali_date_str,
     }
@@ -59,28 +64,26 @@ def gate_view(request):
 
 @login_required
 @require_POST
-def toggle_routine_log(request, item_id):
+def toggle_task_log(request, task_id):
     """
-    AJAX Endpoint: Toggles a routine item's completion for today.
+    AJAX Endpoint: Toggles a Task's completion for today.
+    Works for both Parent Tasks (Routines) and Subtasks (Items).
     """
     # Verify ownership via profile
-    item = get_object_or_404(
-        RoutineItem, id=item_id, routine__profile__user=request.user
-    )
+    task = get_object_or_404(Task, id=task_id, profile__user=request.user)
     today = timezone.now().date()
 
     # Check for existing log today
-    log = RoutineLog.objects.filter(item=item, completed_at__date=today).first()
+    log = TaskLog.objects.filter(task=task, completed_at__date=today).first()
 
     if log:
         log.delete()
         status = "removed"
     else:
-        RoutineLog.objects.create(
-            item=item,
-            routine=item.routine,
-            completed_at=timezone.now(),
+        # Create Log with XP Snapshot
+        TaskLog.objects.create(
+            task=task, completed_at=timezone.now(), xp_earned=task.xp_reward
         )
         status = "added"
 
-    return JsonResponse({"status": status, "item_id": item_id})
+    return JsonResponse({"status": status, "task_id": task_id})

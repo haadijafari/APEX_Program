@@ -15,7 +15,7 @@ from apps.gate.services.calendar import (
     get_jalali_calendar_context,
 )
 from apps.profiles.models import PlayerProfile
-from apps.tasks.models import Habit, HabitLog
+from apps.tasks.models import Task, TaskLog
 
 
 class IndexView(LoginRequiredMixin, TemplateView):
@@ -91,16 +91,21 @@ class IndexView(LoginRequiredMixin, TemplateView):
             sleep_data.append(round(duration, 1))
 
         # --- 4. Habit Grid & Habit Counts ---
-        # Get active habits
-        habits = Habit.objects.filter(task__profile=profile).select_related("task")
+        # Get active "Habits" (Tasks that have a schedule)
+        habits = Task.objects.filter(
+            profile=profile,
+            is_active=True,
+            schedule__isnull=False,  # This ensures the task is a "Habit"
+        ).select_related("schedule")
 
         # Fetch all logs for this month (Source of Truth)
-        habit_logs = HabitLog.objects.filter(
-            habit__in=habits,
+        # Note: We query TaskLog now, filtering by the tasks we found above
+        habit_logs = TaskLog.objects.filter(
+            task__in=habits,
             completed_at__date__range=[g_start, g_end],
-        )
+        ).select_related("task")
 
-        # Map completions: { habit_title: { date_str: True } }
+        # Map completions: { task_id: { date_str: True } }
         habit_completion_map = set()
         # Map daily counts: { date_str: count }
         daily_habit_counts_map = {}
@@ -111,18 +116,18 @@ class IndexView(LoginRequiredMixin, TemplateView):
             c_date = log.completed_at.date()
             c_date_str = c_date.strftime("%Y-%m-%d")
 
-            # For Grid
-            habit_completion_map.add((log.habit.id, c_date_str))
+            # For Grid: Use task.id directly
+            habit_completion_map.add((log.task.id, c_date_str))
 
             # For Bar Chart
             daily_habit_counts_map[c_date_str] = (
                 daily_habit_counts_map.get(c_date_str, 0) + 1
             )
 
-            # Collect titles
+            # Collect titles: Access title directly from the task
             if c_date_str not in daily_habit_titles_map:
                 daily_habit_titles_map[c_date_str] = []
-            daily_habit_titles_map[c_date_str].append(log.habit.task.title)
+            daily_habit_titles_map[c_date_str].append(log.task.title)
 
         # Build Grid Structure
         habit_grid = []
@@ -181,65 +186,75 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
 @login_required
 @require_POST
-def toggle_habit_log(request, habit_id, date_str):
+def toggle_habit_log(request, task_id, date_str):
     """
-    AJAX Endpoint: Toggles the completion status of a habit for a specific date.
-    Creates or deletes a HabitLog entry.
+    AJAX Endpoint: Toggles the completion status of a habit (Task) for a specific date.
+    Creates or deletes a TaskLog entry.
     """
-    # Use filter().first() to avoid crash if profile doesn't exist yet (though unlikely here)
+    # 1. Get Profile
     profile = PlayerProfile.objects.filter(user=request.user).first()
     if not profile:
         return JsonResponse({"error": "Profile not found"}, status=404)
 
-    habit = get_object_or_404(Habit, id=habit_id, task__profile=profile)
+    # 2. Get the Task
+    # We ensure it belongs to the user.
+    # Optional: Add `schedule__isnull=False` if you strictly only allow toggling "Habits".
+    task = get_object_or_404(Task, id=task_id, profile=profile)
 
     try:
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
     except ValueError:
         return JsonResponse({"error": "Invalid date format"}, status=400)
 
-    # 1. Toggle Logic
-    # Check for existing log in that day
-    logs = HabitLog.objects.filter(habit=habit, completed_at__date=date_obj)
+    # 3. Toggle Logic
+    # Check for existing log for this task on that specific day
+    logs = TaskLog.objects.filter(task=task, completed_at__date=date_obj)
 
     if logs.exists():
-        # Toggle OFF: Delete the log
+        # Toggle OFF: Delete the log(s)
+        # We delete all to be safe against duplicates
         logs.delete()
         status = "removed"
     else:
-        # If it's today, we might want to keep the exact time.
-        # But for consistency with "None" request, we default to midnight for manual toggles.
-        # However, to be safe, if it is today, we can use now(); otherwise midnight.
+        # Toggle ON: Create the log
         now = timezone.now()
 
+        # Time Logic:
+        # If toggling for "Today", use current time (preserve exact completion time).
+        # If toggling for "Yesterday" or past, use 00:00:00 (Midnight) of that day.
         if date_obj == now.date():
             log_time = now
         else:
-            # Set time to 00:00:00 (Start of day)
+            # Create a datetime at midnight for the specific date
             log_time = timezone.datetime.combine(date_obj, timezone.datetime.min.time())
             if timezone.is_aware(now):
                 log_time = timezone.make_aware(log_time)
 
-        HabitLog.objects.create(habit=habit, completed_at=log_time)
+        # Create Log (XP snapshot is handled in TaskLog model defaults or signals if needed)
+        TaskLog.objects.create(
+            task=task,
+            completed_at=log_time,
+            xp_earned=task.xp_reward,  # Snapshot the XP value now
+        )
         status = "added"
 
-    # 2. Recalculate Daily Count for Chart
-    # Get all habits for this user
-    all_habits = Habit.objects.filter(task__profile=profile)
+    # 4. Recalculate Daily Count for Chart
+    # We only count "Habits" (Tasks with schedules) for the heatmap/chart consistency
+    habits = Task.objects.filter(profile=profile, schedule__isnull=False)
 
-    # Fetch logs to get count AND titles
-    updated_logs = HabitLog.objects.filter(
-        habit__in=all_habits, completed_at__date=date_obj
-    ).select_related("habit__task")
+    # Fetch logs for all habits on this date
+    updated_logs = TaskLog.objects.filter(
+        task__in=habits, completed_at__date=date_obj
+    ).select_related("task")
 
     daily_count = updated_logs.count()
-    daily_titles = [log.habit.task.title for log in updated_logs]
+    daily_titles = [log.task.title for log in updated_logs]
 
     return JsonResponse(
         {
             "status": status,
             "date": date_str,
-            "habit_id": habit_id,
+            "task_id": task_id,
             "daily_count": daily_count,
             "daily_titles": daily_titles,
         }
