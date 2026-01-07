@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.db import models
+from django.db.models import Count
 from unfold.admin import ModelAdmin, StackedInline, TabularInline
 
 from apps.tasks.forms import TaskScheduleAdminForm
@@ -10,7 +11,6 @@ from apps.tasks.models import Task, TaskLog, TaskSchedule
 class TaskLogInline(TabularInline):
     """
     Shows the history of this task (when it was completed).
-    Replaces the old 'RoutineLog' and 'HabitLog'.
     """
 
     model = TaskLog
@@ -26,7 +26,7 @@ class TaskLogInline(TabularInline):
 class TaskScheduleInline(StackedInline):
     """
     Embeds the schedule settings directly into the Task page.
-    Presence of this inline turns a Task into a "Habit".
+    Presence of this inline turns a Task into a "Habit" (or Routine).
     """
 
     model = TaskSchedule
@@ -41,22 +41,20 @@ class TaskScheduleInline(StackedInline):
             None,
             {
                 "fields": (
-                    ("frequency", "interval", "start_time", "weekdays"),
+                    ("frequency", "interval", "weekdays"),
+                    ("start_time", "end_time"),
                     ("current_streak", "longest_streak"),
                 )
             },
         ),
     )
 
-    # Force native time picker
+    # Force native time picker for better UX
     formfield_overrides = {
         models.TimeField: {
             "widget": forms.TimeInput(attrs={"type": "time", "class": "form-control"})
         },
     }
-
-    class Media:
-        js = ("js/admin_tasks.js",)
 
 
 @admin.register(Task)
@@ -66,7 +64,7 @@ class TaskAdmin(ModelAdmin):
         "final_rank",
         "stats_display",
         "xp_reward_display",
-        "get_type_display",  # Helper to show if it's a Routine/Habit/Task
+        "get_type_display",  # Visual indicator (Routine/Habit/Task)
         "is_active",
     ]
 
@@ -74,7 +72,8 @@ class TaskAdmin(ModelAdmin):
         "is_active",
         "primary_stat",
         "computed_rank",
-        # Custom filters could be added here for "Is Habit" or "Is Routine"
+        # Helper filter to see only Habits (Tasks with schedules)
+        ("schedule", admin.EmptyFieldListFilter),
     ]
 
     search_fields = ["title", "description"]
@@ -96,7 +95,7 @@ class TaskAdmin(ModelAdmin):
                     "profile",
                     "title",
                     "description",
-                    ("parent", "order"),  # Hierarchy fields
+                    ("parent", "order"),
                 )
             },
         ),
@@ -110,7 +109,7 @@ class TaskAdmin(ModelAdmin):
                     "fear_factor",
                 ),
                 "description": "Adjust these to change the computed rank automatically.",
-                "classes": ("collapse",),  # Optional: collapsible
+                "classes": ("collapse",),
             },
         ),
         (
@@ -127,6 +126,16 @@ class TaskAdmin(ModelAdmin):
         ("Status", {"fields": ("is_active",)}),
     )
 
+    # --- Performance Optimization ---
+    def get_queryset(self, request):
+        """
+        Fixes N+1 Query problem.
+        1. Selects related 'schedule' so hasattr(self, 'schedule') is instant.
+        2. Annotates 'subtask_count' so self.subtasks.exists() logic is instant.
+        """
+        qs = super().get_queryset(request)
+        return qs.select_related("schedule").annotate(subtask_count=Count("subtasks"))
+
     # --- Custom Display Methods ---
 
     def xp_reward_display(self, obj):
@@ -142,7 +151,6 @@ class TaskAdmin(ModelAdmin):
     stats_display.short_description = "Stats"
 
     def xp_distribution_display(self, obj):
-        """Shows the calculated split in the admin form"""
         dist = obj.xp_distribution
         return ", ".join([f"{k}: {v}" for k, v in dist.items()])
 
@@ -151,15 +159,21 @@ class TaskAdmin(ModelAdmin):
     def get_type_display(self, obj):
         """
         Visual indicator of what this Task 'is'.
+        Uses the optimized properties from the Model.
         """
         labels = []
         if obj.is_routine:
             labels.append("📂 Routine")
-        if obj.is_habit:
+        elif obj.is_habit:  # 'elif' because routines are also habits, but we prioritize the routine label or show both
             labels.append("🔄 Habit")
-        if not labels:
-            labels.append("task")
 
-        return " & ".join(labels)
+        # If it's a subtask (has a parent), add a small marker
+        if obj.parent:
+            labels.append("↳ Subtask")
+
+        if not labels:
+            return "Task"
+
+        return " ".join(labels)
 
     get_type_display.short_description = "Type"

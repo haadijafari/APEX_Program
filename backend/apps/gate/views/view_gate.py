@@ -1,5 +1,6 @@
 import jdatetime
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -24,7 +25,7 @@ def gate_view(request):
     # Get or Create the page for today
     day_page, created = DayPage.objects.get_or_create(user=request.user, date=today)
 
-    # Handle Form Submission (Saving the DayPage data)
+    # Handle Form Submission
     if request.method == "POST":
         form = DayPageForm(request.POST, instance=day_page)
         if form.is_valid():
@@ -33,18 +34,24 @@ def gate_view(request):
     else:
         form = DayPageForm(instance=day_page)
 
-    # 1. Fetch Top-Level Tasks (Routines & Standalone Tasks)
-    tasks = (
+    # 1. Fetch Top-Level Tasks
+    # OPTIMIZATION: Annotate subtask_count so 'is_routine' doesn't hit DB
+    all_tasks = (
         Task.objects.filter(
             profile__user=request.user, is_active=True, parent__isnull=True
         )
         .prefetch_related("subtasks")
         .select_related("schedule")
+        .annotate(subtask_count=Count("subtasks"))
         .order_by("order", "created_at")
     )
 
-    # 2. Fetch Completed Items for TODAY
-    # We fetch ALL logs for this user today (Parents AND Children)
+    # 2. Split into Routines and Standalone Tasks
+    # This allows the template to use {% empty %} correctly
+    routines = [t for t in all_tasks if t.is_routine]
+    standalone_tasks = [t for t in all_tasks if not t.is_routine]
+
+    # 3. Fetch Completed Items for TODAY
     completed_task_ids = set(
         TaskLog.objects.filter(
             task__profile__user=request.user, completed_at__date=today
@@ -54,7 +61,8 @@ def gate_view(request):
     context = {
         "day_page": day_page,
         "form": form,
-        "tasks": tasks,
+        "routines": routines,  # Now available for gate_routines.html
+        "tasks": standalone_tasks,  # Available for other parts of gate.html
         "completed_task_ids": completed_task_ids,
         "today": today,
         "jalali_date_str": jalali_date_str,
@@ -69,7 +77,6 @@ def toggle_task_log(request, task_id):
     AJAX Endpoint: Toggles a Task's completion for today.
     Works for both Parent Tasks (Routines) and Subtasks (Items).
     """
-    # Verify ownership via profile
     task = get_object_or_404(Task, id=task_id, profile__user=request.user)
     today = timezone.now().date()
 
@@ -80,10 +87,8 @@ def toggle_task_log(request, task_id):
         log.delete()
         status = "removed"
     else:
-        # Create Log with XP Snapshot
-        TaskLog.objects.create(
-            task=task, completed_at=timezone.now(), xp_earned=task.xp_reward
-        )
+        # Create Log (Signal handles XP)
+        TaskLog.objects.create(task=task, completed_at=timezone.now())
         status = "added"
 
     return JsonResponse({"status": status, "task_id": task_id})

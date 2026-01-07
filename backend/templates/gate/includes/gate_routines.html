@@ -1,21 +1,25 @@
 <h4 class="mb-3 text-muted">Active Routines</h4>
+
 {% for routine in routines %}
     <div class="card mb-3 border-secondary shadow-sm">
         <div class="card-header fw-bold border-secondary">
             {{ routine.title }}
         </div>
         <ul class="list-group list-group-flush">
-            {% for item in routine.items.all %}
+            {# Iterate over 'subtasks' (Related Name in Task model) #}
+            {% for subtask in routine.subtasks.all %}
                 <li class="list-group-item d-flex align-items-center">
                     <input class="form-check-input me-2" 
                            type="checkbox" 
                            value="" 
-                           id="item{{item.id}}"
-                           {% if item.id in completed_item_ids %}checked{% endif %}
-                           onclick="toggleRoutineItem({{ item.id }})">
+                           id="task-{{ subtask.id }}"
+                           {# Check against the set of IDs passed from view #}
+                           {% if subtask.id in completed_task_ids %}checked{% endif %}
+                           {# Ensure your JS has a function for this, or use the generic toggle #}
+                           onclick="toggleTask({{ subtask.id }})">
                     
-                    <label class="form-check-label stretched-link text-reset" for="item{{item.id}}">
-                        {{ item.task.title }}
+                    <label class="form-check-label stretched-link text-reset" for="task-{{ subtask.id }}">
+                        {{ subtask.title }}
                     </label>
                 </li>
             {% endfor %}
