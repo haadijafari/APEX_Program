@@ -1,3 +1,4 @@
-from apps.tasks.admin.tasks import HabitAdmin, OneTimeTaskAdmin
+from .habits import HabitAdmin
+from .onetime import OneTimeTaskAdmin
 
 __all__ = ["HabitAdmin", "OneTimeTaskAdmin"]
