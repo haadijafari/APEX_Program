@@ -16,9 +16,19 @@ class SubTaskInline(TabularInline):
     fk_name = "parent"
     # Clean UI: don't show empty rows by default
     extra = 0
+    # Make it clickable
+    show_change_link = True
+    can_delete = True
     verbose_name = "Subtask"
     verbose_name_plural = "Subtasks (Checklist)"
-    fields = ["order", "title", "effort_level", "is_active"]
+    fields = [
+        "order",
+        "title",
+        "primary_stat",
+        "secondary_stat",
+        "manual_rank",
+        "is_active",
+    ]
     ordering = ("order",)
     classes = ["collapse"]
 

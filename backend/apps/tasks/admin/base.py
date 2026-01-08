@@ -61,6 +61,21 @@ class BaseTaskAdmin(ModelAdmin):
             obj.profile = request.user.profile
         super().save_model(request, obj, form, change)
 
+    def save_formset(self, request, form, formset, change):
+        """
+        Inject the user profile into Inlines (like Subtasks) before saving.
+        """
+        instances = formset.save(commit=False)
+        for instance in instances:
+            # Check if the inline instance needs a profile (e.g., it's a Subtask)
+            if hasattr(instance, "profile_id") and not instance.profile_id:
+                # Inherit profile from the parent task, or fallback to current user
+                parent_profile = getattr(formset.instance, "profile", None)
+                instance.profile = parent_profile or request.user.profile
+
+            instance.save()
+        formset.save_m2m()
+
     def get_queryset(self, request):
         """Optimize queries for all children"""
         qs = super().get_queryset(request)
