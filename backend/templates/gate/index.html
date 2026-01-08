@@ -188,6 +188,8 @@
 
         // 3. Render Habit Count Chart (THIS is where the tooltip logic belongs)
         const habitCountData = {{ habit_counts_data|safe }};
+        // Get the total count from Django
+        const totalActiveHabits = {{ total_active_habits|default:5 }};
         habitCountChart = new Chart(document.getElementById('habitCountChart'), {
             type: 'bar',
             data: {
@@ -207,7 +209,8 @@
                     y: { 
                         beginAtZero: true, 
                         grid: { color: '#333' },
-                        ticks: { stepSize: 1 }
+                        ticks: { stepSize: 1 },
+                        max: totalActiveHabits,
                     },
                     x: {
                         grid: { display: false },

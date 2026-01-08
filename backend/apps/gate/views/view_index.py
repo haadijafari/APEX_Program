@@ -158,6 +158,7 @@ class IndexView(LoginRequiredMixin, TemplateView):
                 "habit_grid": habit_grid,
                 "habit_counts_data": habit_counts_data,
                 "habit_titles_data": habit_titles_data,
+                "total_active_habits": habits.count(),
             }
         )
 
