@@ -238,12 +238,11 @@ UNFOLD = {
 }
 
 
-# TODO: Make it work!
 # TinyMCE Configuration
 TINYMCE_DEFAULT_CONFIG = {
     "theme": "silver",
-    "height": 500,  # Increased height for better visibility
-    "menubar": False,
+    "height": 300,
+    "menubar": True,
     "plugins": "advlist autolink lists link image charmap preview anchor "
     "searchreplace visualblocks code fullscreen insertdatetime media table help wordcount",
     "toolbar": "undo redo | formatselect | "

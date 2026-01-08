@@ -1,4 +1,5 @@
 from django import forms
+from tinymce.widgets import TinyMCE
 from unfold.widgets import UnfoldAdminCheckboxSelectMultiple
 
 from apps.tasks.models import Task, TaskSchedule
@@ -9,6 +10,7 @@ class TaskForm(forms.ModelForm):
         model = Task
         fields = "__all__"
         widgets = {
+            "description": TinyMCE(attrs={"cols": 80, "rows": 30}),
             "effort_level": forms.NumberInput(
                 attrs={
                     "type": "range",
