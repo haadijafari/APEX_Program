@@ -17,6 +17,7 @@ urlpatterns = [
     ),  # Provides login, logout, password_change
     path("", include("apps.gate.urls")),
     path("api-auth/", include("rest_framework.urls")),
+    path("tinymce/", include("tinymce.urls")),
 ]
 
 if DEBUG:

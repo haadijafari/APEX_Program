@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "corsheaders",
     "taggit",
-    "ckeditor",
+    "tinymce",
 ]
 
 MIDDLEWARE = [
@@ -164,21 +164,93 @@ UNFOLD = {
         "show_all_applications": False,
         "navigation": [
             {
-                "title": "Navigation",
-                "separator": True,  # Top border
+                "title": "Daily Operation",
+                "separator": True,
                 "items": [
                     {
-                        "title": "Gate",
-                        "icon": "home",  # Material Icon name
-                        "link": reverse_lazy("admin:gate_daypage_changelist"),
+                        "title": "Gate (Daily View)",
+                        "icon": "home",
+                        "link": reverse_lazy("admin:gate_dailyentry_changelist"),
                     },
+                ],
+            },
+            {
+                "title": "Grimoire (Planning)",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Tasks",
+                        "icon": "check_circle",
+                        "link": reverse_lazy("admin:tasks_onetimetask_changelist"),
+                    },
+                    {
+                        "title": "Habits",
+                        "icon": "edit_calendar",
+                        "link": reverse_lazy("admin:tasks_habit_changelist"),
+                    },
+                    {
+                        "title": "Tags",
+                        "icon": "label",
+                        "link": reverse_lazy("admin:taggit_tag_changelist"),
+                    },
+                    # If you have a separate model for TaskLog/History, useful to see raw logs
+                    # {
+                    #     "title": "Completion Logs",
+                    #     "icon": "history",
+                    #     "link": reverse_lazy("admin:tasks_tasklog_changelist"),
+                    # },
+                ],
+            },
+            {
+                "title": "Character",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Player Profile",
+                        "icon": "face",
+                        "link": reverse_lazy("admin:profiles_playerprofile_changelist"),
+                    },
+                    # {
+                    #     "title": "Inventory",
+                    #     "icon": "backpack",  # If you have the inventory app
+                    #     "link": reverse_lazy("admin:inventory_item_changelist"),
+                    # },
+                ],
+            },
+            {
+                "title": "System",
+                "separator": True,
+                "items": [
                     {
                         "title": "Users",
                         "icon": "people",
                         "link": reverse_lazy("admin:accounts_user_changelist"),
                     },
+                    {
+                        "title": "Groups",
+                        "icon": "lock",
+                        "link": reverse_lazy("admin:auth_group_changelist"),
+                    },
                 ],
             },
         ],
     },
+}
+
+
+# TODO: Make it work!
+# TinyMCE Configuration
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 500,  # Increased height for better visibility
+    "menubar": False,
+    "plugins": "advlist autolink lists link image charmap preview anchor "
+    "searchreplace visualblocks code fullscreen insertdatetime media table help wordcount",
+    "toolbar": "undo redo | formatselect | "
+    "bold italic backcolor | alignleft aligncenter "
+    "alignright alignjustify | bullist numlist outdent indent | "
+    "removeformat | help",
+    # Dark Mode Settings
+    "skin": "oxide-dark",
+    "content_css": "dark",
 }

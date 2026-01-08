@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
-from apps.gate.models.daily_entry import DayPage
+from apps.gate.models import DailyEntry
 from apps.gate.services.calendar import (
     get_current_month_info,
     get_jalali_calendar_context,
@@ -57,8 +57,10 @@ class IndexView(LoginRequiredMixin, TemplateView):
         j_today = month_info["j_today"]
 
         # --- 3. Sleep Diagram Data ---
-        day_pages = DayPage.objects.filter(user=user, date__range=[g_start, g_end])
-        sleep_map = {dp.date: dp for dp in day_pages}
+        daily_entries = DailyEntry.objects.filter(
+            user=user, date__range=[g_start, g_end]
+        )
+        sleep_map = {dp.date: dp for dp in daily_entries}
 
         sleep_data = []
         for d in range(days_in_month):
@@ -144,8 +146,10 @@ class IndexView(LoginRequiredMixin, TemplateView):
             {
                 "today": today,
                 "profile": profile,
-                "has_gate_log": DayPage.objects.filter(user=user, date=today).exists(),
-                "streak": DayPage.objects.filter(user=user).count(),
+                "has_gate_log": DailyEntry.objects.filter(
+                    user=user, date=today
+                ).exists(),
+                "streak": DailyEntry.objects.filter(user=user).count(),
                 "stat_labels": stat_labels,
                 "stat_values": stat_values,
                 "month_days": month_days,

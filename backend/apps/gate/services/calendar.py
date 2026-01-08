@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import jdatetime
 
-from apps.gate.models.daily_entry import DayPage
+from apps.gate.models.daily_entry import DailyEntry
 
 
 def get_current_month_info():
@@ -62,7 +62,7 @@ def get_jalali_calendar_context(user):
 
         # Check database for log (Heatmap logic)
         g_date = date_obj.togregorian()
-        has_log = DayPage.objects.filter(user=user, date=g_date).exists()
+        has_log = DailyEntry.objects.filter(user=user, date=g_date).exists()
 
         calendar_days.append(
             {

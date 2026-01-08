@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from tinymce.models import HTMLField
 
 from apps.profiles.models import PlayerStats
 
@@ -44,7 +45,7 @@ class Task(models.Model):
     )
 
     title = models.CharField(_("Title"), max_length=255)
-    description = models.TextField(_("Description"), blank=True)
+    description = HTMLField(_("Description"), blank=True)
 
     # --- Rewards ---
     primary_stat = models.CharField(
@@ -271,3 +272,25 @@ class Task(models.Model):
                 ancestor = ancestor.parent
 
         return super().clean()
+
+
+class Habit(Task):
+    """
+    Proxy model to manage Tasks that have a schedule (Recurrence).
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "Habit"
+        verbose_name_plural = "Habits"
+
+
+class OneTimeTask(Task):
+    """
+    Proxy model to manage Tasks that are single instances (No schedule).
+    """
+
+    class Meta:
+        proxy = True
+        verbose_name = "One-Time Task"
+        verbose_name_plural = "One-Time Tasks"

@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.gate.forms import DayPageForm
-from apps.gate.models.daily_entry import DayPage
+from apps.gate.forms import DailyEntryForm
+from apps.gate.models.daily_entry import DailyEntry
 from apps.tasks.models import Task, TaskLog
 
 
@@ -16,23 +16,25 @@ def gate_view(request):
     """
     The 'Gate'.
     Where the Hunter enters to complete daily missions.
-    Handles the DayPage form and Routine display.
+    Handles the DailyEntry form and Routine display.
     """
     today = timezone.now().date()
     j_date = jdatetime.date.fromgregorian(date=today)
     jalali_date_str = j_date.strftime("%A, %d %B %Y")
 
     # Get or Create the page for today
-    day_page, created = DayPage.objects.get_or_create(user=request.user, date=today)
+    daily_entry, created = DailyEntry.objects.get_or_create(
+        user=request.user, date=today
+    )
 
     # Handle Form Submission
     if request.method == "POST":
-        form = DayPageForm(request.POST, instance=day_page)
+        form = DailyEntryForm(request.POST, instance=daily_entry)
         if form.is_valid():
             form.save()
             return redirect("gate:gate")
     else:
-        form = DayPageForm(instance=day_page)
+        form = DailyEntryForm(instance=daily_entry)
 
     # 1. Fetch Top-Level Tasks
     # OPTIMIZATION: Annotate subtask_count so 'is_routine' doesn't hit DB
@@ -59,7 +61,7 @@ def gate_view(request):
     )
 
     context = {
-        "day_page": day_page,
+        "daily_entry": daily_entry,
         "form": form,
         "routines": routines,  # Now available for gate_routines.html
         "tasks": standalone_tasks,  # Available for other parts of gate.html

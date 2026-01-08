@@ -1,7 +1,46 @@
 from django import forms
 from unfold.widgets import UnfoldAdminCheckboxSelectMultiple
 
-from apps.tasks.models import TaskSchedule
+from apps.tasks.models import Task, TaskSchedule
+
+
+class TaskForm(forms.ModelForm):
+    class Meta:
+        model = Task
+        fields = "__all__"
+        widgets = {
+            "effort_level": forms.NumberInput(
+                attrs={
+                    "type": "range",
+                    "min": "1",
+                    "max": "10",
+                    "step": "1",
+                    "class": "form-range w-full",  # Tailwind/Bootstrap utility
+                    "style": "width: 100%; max-width: 300px;",
+                }
+            ),
+            "impact_level": forms.NumberInput(
+                attrs={
+                    "type": "range",
+                    "min": "1",
+                    "max": "5",
+                    "step": "1",
+                    "class": "form-range w-full",
+                    "style": "width: 100%; max-width: 300px;",
+                }
+            ),
+            # Optional: Fear Factor is also great as a slider
+            "fear_factor": forms.NumberInput(
+                attrs={
+                    "type": "range",
+                    "min": "1.0",
+                    "max": "2.0",
+                    "step": "0.1",
+                    "class": "form-range w-full",
+                    "style": "width: 100%; max-width: 300px;",
+                }
+            ),
+        }
 
 
 class TaskScheduleAdminForm(forms.ModelForm):

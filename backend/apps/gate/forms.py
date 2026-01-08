@@ -1,14 +1,14 @@
 from django import forms
 
-from apps.gate.models.daily_entry import DayPage
+from apps.gate.models.daily_entry import DailyEntry
 
 # Create explicit choices for the Score (1-10)
 RATING_CHOICES = [(i, str(i)) for i in range(1, 11)]
 
 
-class DayPageForm(forms.ModelForm):
+class DailyEntryForm(forms.ModelForm):
     class Meta:
-        model = DayPage
+        model = DailyEntry
         fields = "__all__"
         widgets = {
             # Use RadioSelect for the Score

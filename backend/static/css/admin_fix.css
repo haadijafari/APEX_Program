@@ -1,0 +1,18 @@
+/* Force the wrapper to fill the container */
+.django-ckeditor-widget {
+    width: 100% !important;
+    display: block !important;
+}
+
+/* Ensure the editor itself fills the wrapper */
+.cke {
+    width: 100% !important;
+    box-shadow: none !important; /* Optional: Remove shadow to match Unfold flat look */
+}
+
+/* Optional: Tweaks to make CKEditor 4 look slightly better in Dark Mode */
+/* Note: The inner content will still be white unless you configure 'contentsCss' */
+.cke_top, .cke_bottom {
+    background: #f3f4f6 !important; /* Light gray to match Unfold light areas */
+    border-color: #e5e7eb !important;
+}

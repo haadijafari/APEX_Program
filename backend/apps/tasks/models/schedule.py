@@ -5,7 +5,12 @@ from django.utils.translation import gettext_lazy as _
 from apps.tasks.models.tasks import Task
 
 
+def default_weekdays():
+    return list(range(0, 7))
+
+
 # TODO: Routines parent should not have schedule conflict with children
+# TODO: Children should not have schedule at all?
 class TaskSchedule(models.Model):
     """
     Defines the recurrence rules for a Task (or Routine).
@@ -40,7 +45,7 @@ class TaskSchedule(models.Model):
     # For Weekly: [0, 1] = Sat, Sun.
     weekdays = models.JSONField(
         _("On Days"),
-        default=list(range(0, 7)),
+        default=default_weekdays,
         blank=True,
         help_text=_("Select specific days for Weekly frequency."),
     )
