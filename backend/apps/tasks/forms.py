@@ -71,6 +71,12 @@ class TaskScheduleAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # If this is a new schedule, clear the frequency default.
+        # This forces the user to select 'Daily' manually, triggering a 'change' event so Django saves it.
+        if not self.instance.pk:
+            self.fields["frequency"].initial = None
+
         # Pre-populate the checkboxes if editing an existing habit
         if self.instance and self.instance.pk and self.instance.weekdays:
             # The form expects a list of strings (e.g. ['0', '1']), but DB has [0, 1]
