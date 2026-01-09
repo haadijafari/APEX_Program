@@ -71,7 +71,7 @@ class TaskLogInline(TabularInline):
 
     model = TaskLog
     extra = 0
-    can_delete = False
+    can_delete = True
     readonly_fields = ["completed_at", "xp_earned"]
     ordering = ("-completed_at",)
     verbose_name = "Completion History"
