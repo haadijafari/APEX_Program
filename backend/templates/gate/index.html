@@ -197,15 +197,18 @@
         // Get the total count from Django
         const totalActiveHabits = {{ total_active_habits|default:5 }};
         habitCountChart = new Chart(document.getElementById('habitCountChart'), {
-            type: 'bar',
+            type: 'line',
             data: {
                 labels: daysLabels,
                 datasets: [{
                     label: 'Habits Completed',
                     data: habitCountData,
-                    backgroundColor: primaryColor,
-                    borderRadius: 2,
-                    barPercentage: 0.6
+                    borderColor: primaryColor,
+                    backgroundColor: `rgba(${primaryRgb}, 0.1)`,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 2,
+                    pointHoverRadius: 5
                 }]
             },
             options: {
