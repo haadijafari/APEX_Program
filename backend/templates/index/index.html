@@ -95,161 +95,23 @@
     </div>
 </div>
 
-<script src="{% static 'js/stats.js' %}"></script>
+{% block extra_js %}
+    <script src="{% static 'js/stats.js' %}"></script>
+
 <script>
-    // Define chart variable in outer scope so toggleHabit can access it
-    let habitCountChart;
-    // Receive titles data from Django
-    let habitTitlesData = {{ habit_titles_data|safe }};
-
-    // --- Habit Toggling Logic ---
-    function toggleHabit(habitId, dateStr, cellElement, dayIndex) {
-        const url = `/habit/toggle/${habitId}/${dateStr}/`;
-        
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            },
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            // 1. Update Grid Icon
-            const iconSpan = cellElement.querySelector('.status-icon');
-            if (data.status === 'added') {
-                iconSpan.innerHTML = '<span class="text-system">●</span>';
-            } else if (data.status === 'removed') {
-                iconSpan.innerHTML = '<span class="text-secondary opacity-25">·</span>';
-            }
-
-            // 2. Update Bar Chart
-            if (habitCountChart && typeof dayIndex !== 'undefined') {
-                // Update the specific bar's data
-                habitCountChart.data.datasets[0].data[dayIndex] = data.daily_count;
-
-                // Update the tooltip titles for this day
-                if (data.daily_titles) {
-                    habitTitlesData[dayIndex] = data.daily_titles;
-                }
-
-                habitCountChart.update();
-            }
-        })
-        .catch(error => {
-            console.error('Error toggling habit:', error);
-        });
-    }
-
-    // --- Chart Initialization ---
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. Render Existing Radar
-        const statLabels = {{ stat_labels|safe }};
-        const statValues = {{ stat_values|safe }};
-        renderStatsChart(statLabels, statValues);
-
-        const styles = getComputedStyle(document.documentElement);
-        const primaryColor = styles.getPropertyValue('--apex-primary').trim() || '#0d6efd';
-        const primaryRgb = styles.getPropertyValue('--apex-primary-rgb').trim() || '13, 110, 253';
-        
-        const daysLabels = {{ month_days|safe }};
-
-        // 2. Render Sleep Chart (Standard config, no fancy tooltips needed here)
-        const sleepData = {{ sleep_data|safe }};
-        new Chart(document.getElementById('sleepChart'), {
-            type: 'line',
-            data: {
-                labels: daysLabels,
-                datasets: [{
-                    label: 'Sleep Duration (hrs)',
-                    data: sleepData,
-                    borderColor: primaryColor,
-                    backgroundColor: `rgba(${primaryRgb}, 0.1)`,
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 2,
-                    pointHoverRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: '#333' },
-                        suggestedMax: 10
-                    },
-                    x: { 
-                        grid: { display: false },
-                        ticks: {
-                            autoSkip: false, // Forces all labels (days) to show
-                            maxRotation: 0   // Prevents tilting
-                        }
-                    }
-                },
-                plugins: { legend: { display: false } } 
-            }
-        });
-
-        // 3. Render Habit Count Chart (THIS is where the tooltip logic belongs)
-        const habitCountData = {{ habit_counts_data|safe }};
-        // Get the total count from Django
-        const totalActiveHabits = {{ total_active_habits|default:5 }};
-        habitCountChart = new Chart(document.getElementById('habitCountChart'), {
-            type: 'line',
-            data: {
-                labels: daysLabels,
-                datasets: [{
-                    label: 'Habits Completed',
-                    data: habitCountData,
-                    borderColor: primaryColor,
-                    backgroundColor: `rgba(${primaryRgb}, 0.1)`,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 2,
-                    pointHoverRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        grid: { color: '#333' },
-                        ticks: { stepSize: 1 },
-                        max: totalActiveHabits,
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            autoSkip: false,
-                            maxRotation: 0
-                        }
-                    }
-                },
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            afterLabel: function(context) {
-                                const titles = habitTitlesData[context.dataIndex];
-                                if (titles && titles.length > 0) {
-                                    return titles;
-                                }
-                                return [];
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    });
+    window.apexPageData = {
+        habitTitlesData: {{ habit_titles_data|safe }},
+        csrfToken: '{{ csrf_token }}',
+        statLabels: {{ stat_labels|safe }},
+        statValues: {{ stat_values|safe }},
+        monthDays: {{ month_days|safe }},
+        sleepData: {{ sleep_data|safe }},
+        habitCountsData: {{ habit_counts_data|safe }},
+        totalActiveHabits: {{ total_active_habits|default:5 }}
+    };
 </script>
+
+<script src="{% static 'js/index.js' %}"></script>
+{% endblock %}
 
 {% endblock %}
