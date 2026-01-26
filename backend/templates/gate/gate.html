@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'layouts/base.html' %}
 {% load static %}
 
 {% block extra_css %}
@@ -8,15 +8,15 @@
 {% block content %}
 <div class="container-fluid py-4">
     
-    {% include 'gate/includes/gate_header.html' %}
+    {% include 'gate/_header.html' %}
 
     <div class="row">
         <div class="col-lg-8">
-            {% include 'gate/includes/gate_form_main.html' %}
+            {% include 'gate/_form_main.html' %}
         </div>
 
         <div class="col-md-4">
-            {% include 'gate/includes/gate_routines.html' %}
+            {% include 'gate/_routines.html' %}
         </div>
     </div>
 </div>

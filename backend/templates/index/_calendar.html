@@ -21,9 +21,11 @@
                 <div style="width: 14.28%; height: 50px; padding: 2px;">
                     {% if day_info %}
                         <div class="h-100 rounded d-flex flex-column justify-content-center align-items-center position-relative
-                            {% if day_info.is_today %} border border-system bg-system-soft
-                            {% elif day_info.has_log %} bg-success opacity-75
-                            {% else %} bg-dark border border-secondary text-secondary
+                            {% if day_info.is_today and day_info.has_log %} border border-system bg-system-soft
+                            {% elif day_info.is_today and not day_info.has_log %} bg-warning text-dark
+                            {% elif day_info.has_log %} bg-success
+                            {% comment %} {% elif after_today %} bg-dark border border-secondary text-secondary {% endcomment %}
+                            {% elif not day_info.has_log %} bg-danger border border-secondary text-white
                             {% endif %}"
                         >
                             <span class="small fw-bold">{{ day_info.day }}</span>

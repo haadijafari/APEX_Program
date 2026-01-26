@@ -1,19 +1,19 @@
-{% extends 'base.html' %}
+{% extends 'layouts/base.html' %}
 {% load static %}
 
 {% block content %}
 <div class="container-fluid p-4">
     <div class="row g-4 mb-4">
         <div class="col-lg-4 col-xl-5">
-             {% include 'gate/includes/index_calendar.html' %}
+             {% include 'index/_calendar.html' %}
         </div>
 
         <div class="col-lg-4 col-xl-4">
-            {% include 'gate/includes/index_player_card.html' %}
+            {% include 'index/_player_card.html' %}
         </div>
 
         <div class="col-lg-4 col-xl-3">
-            {% include 'gate/includes/index_stats_radar.html' %}
+            {% include 'index/_stats_radar.html' %}
         </div>
     </div>
 
