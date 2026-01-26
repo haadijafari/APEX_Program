@@ -1,0 +1,5 @@
+/* Dynamic Crosshair Highlight for Habit Table */
+.habit-crosshair-active {
+    background-color: rgba(var(--apex-primary-rgb), 0.25) !important;
+    transition: background-color 0.1s ease;
+}

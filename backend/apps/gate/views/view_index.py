@@ -122,12 +122,42 @@ class IndexView(LoginRequiredMixin, TemplateView):
             # FIX: habit is a Task object, so use habit.title directly
             title = habit.title
 
+            # Get Start Date for coloring logic
+            start_date = None
+            if hasattr(habit, "schedule") and habit.schedule.start_time:
+                start_date = habit.schedule.start_time.date()
+
             for d in range(days_in_month):
                 c_j_date = j_month_start + timedelta(days=d)
+                c_g_date = c_j_date.togregorian()  # This is a date object
                 c_g_date_str = c_j_date.togregorian().strftime("%Y-%m-%d")
 
                 is_done = (habit.id, c_g_date_str) in habit_completion_map
-                row.append({"date": c_g_date_str, "status": is_done})
+                is_today = c_j_date == j_today
+
+                # Determine State for Coloring
+                state = "future"  # Default for future
+                if is_done:
+                    state = "completed"
+                elif c_g_date == today:
+                    state = "today"
+                elif c_g_date < today:
+                    # Past Logic
+                    if start_date and c_g_date < start_date:
+                        state = "before-start"  # Grey
+                    else:
+                        state = "missed"  # Red
+                elif c_g_date > today:
+                    state = "future"
+
+                row.append(
+                    {
+                        "date": c_g_date_str,
+                        "status": is_done,
+                        "state": state,
+                        "is_today": is_today,
+                    }
+                )
 
             habit_grid.append({"id": habit.id, "title": title, "status": row})
 
@@ -154,6 +184,7 @@ class IndexView(LoginRequiredMixin, TemplateView):
                 "stat_values": stat_values,
                 "month_days": month_days,
                 "current_month_name": j_today.strftime("%B"),
+                "current_day_number": j_today.day,
                 "sleep_data": sleep_data,
                 "habit_grid": habit_grid,
                 "habit_counts_data": habit_counts_data,
@@ -178,7 +209,9 @@ def toggle_habit_log(request, task_id, date_str):
     if not profile:
         return JsonResponse({"error": "Profile not found"}, status=404)
 
-    task = get_object_or_404(Task, id=task_id, profile=profile)
+    task = get_object_or_404(
+        Task.objects.select_related("schedule"), id=task_id, profile=profile
+    )
 
     try:
         date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -212,6 +245,35 @@ def toggle_habit_log(request, task_id, date_str):
         )
         status = "added"
 
+    # Calculate the correct Icon HTML for the frontend to render
+    icon_html = ""
+    if status == "added":
+        # Completed: Emoji ✅
+        icon_html = '<span class="fs-6">✅</span>'
+    else:
+        # Undone State Logic
+        today = timezone.now().date()
+        start_date = (
+            task.schedule.start_time.date()
+            if (task.schedule and task.schedule.start_time)
+            else None
+        )
+
+        if date_obj == today:
+            # Today: Yellow Dot
+            icon_html = '<span class="text-warning">●</span>'
+        elif date_obj > today:
+            # Future: Grey Dot
+            icon_html = '<span class="text-secondary opacity-25">·</span>'
+        else:
+            # Past
+            if start_date and date_obj < start_date:
+                # Before Start: Grey Dot
+                icon_html = '<span class="text-secondary opacity-25">·</span>'
+            else:
+                # Missed: Faded Red X (Removed fw-bold, added opacity-50)
+                icon_html = '<span class="text-danger opacity-50">✕</span>'
+
     # Recalculate Daily Count
     habits = Task.objects.filter(profile=profile, schedule__isnull=False)
     updated_logs = TaskLog.objects.filter(
@@ -224,6 +286,7 @@ def toggle_habit_log(request, task_id, date_str):
     return JsonResponse(
         {
             "status": status,
+            "icon_html": icon_html,
             "date": date_str,
             "task_id": task_id,
             "daily_count": daily_count,

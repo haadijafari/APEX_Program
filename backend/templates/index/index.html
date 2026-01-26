@@ -1,6 +1,10 @@
 {% extends 'layouts/base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid p-4">
     <div class="row g-4 mb-4">
@@ -25,33 +29,38 @@
                     <span class="fw-bold text-system">{{ current_month_name }}</span>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-dark table-borderless table-sm mb-0 text-center align-middle">
-                            <thead>
-                                <tr>
-                                    <th class="text-start ps-3 text-muted" style="min-width: 150px;">Habit</th>
-                                    {% for day in month_days %}
-                                        <th class="small text-secondary fw-light" style="width: 28px;">{{ day }}</th>
-                                    {% endfor %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for habit in habit_grid %}
-                                <tr>
-                                    <td class="text-start ps-3 fw-bold text-light">{{ habit.title }}</td>
-                                    {% for cell in habit.status %}
-                                        <td style="cursor: pointer;" 
-                                            onclick="toggleHabit({{ habit.id }}, '{{ cell.date }}', this, {{ forloop.counter0 }})"
-                                            title="Toggle status for {{ cell.date }}">
-                                            <span class="status-icon">
-                                            {% if cell.status %}
-                                                <span class="text-system">●</span> 
-                                            {% else %}
-                                                <span class="text-secondary opacity-25">·</span>
-                                            {% endif %}
-                                            </span>
-                                        </td>
-                                    {% endfor %}
+                    <table class="table table-dark table-borderless table-sm mb-0 text-center align-middle habit-tracker-table">
+                        <thead>
+                            <tr>
+                                <th class="text-start ps-3 text-muted" style="min-width: 150px;">Habit</th>
+                                {% for day in month_days %}
+                                    <th class="small {% if day == current_day_number %}text-system fw-bold{% else %}text-secondary fw-light{% endif %}" style="width: 28px;">{{ day }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for habit in habit_grid %}
+                            <tr>
+                                <td class="text-start ps-3 fw-bold text-light">{{ habit.title }}</td>
+                                {% for cell in habit.status %}
+                                    <td style="cursor: pointer;" 
+                                        onclick="toggleHabit({{ habit.id }}, '{{ cell.date }}', this, {{ forloop.counter0 }})"
+                                        title="Toggle status for {{ cell.date }}">
+                                        
+                                        <span class="status-icon">
+                                        {% if cell.state == 'completed' %}
+                                            <span class="fs-6">✅</span>
+                                        {% elif cell.state == 'today' %}
+                                            <span class="text-warning">●</span>
+                                        {% elif cell.state == 'missed' %}
+                                            <span class="text-danger opacity-50">✕</span>
+                                        {% else %}
+                                            <span class="text-secondary opacity-25">·</span>
+                                        {% endif %}
+                                        </span>
+
+                                    </td>
+                                {% endfor %}
                                 </tr>
                                 {% empty %}
                                 <tr>
