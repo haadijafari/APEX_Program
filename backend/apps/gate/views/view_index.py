@@ -292,7 +292,9 @@ def toggle_habit_log(request, task_id, date_str):
                 icon_html = '<span class="text-danger opacity-50">✕</span>'
 
     # Recalculate Daily Count
-    habits = Task.objects.filter(profile=profile, schedule__isnull=False)
+    habits = Task.objects.filter(
+        profile=profile, is_active=True, schedule__isnull=False
+    )
     updated_logs = TaskLog.objects.filter(
         task__in=habits, completed_at__date=date_obj
     ).select_related("task")

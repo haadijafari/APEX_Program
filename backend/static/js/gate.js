@@ -157,12 +157,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-// Function to toggle routine items
-function toggleRoutineItem(itemId) {
-    const url = `/routine/toggle/${itemId}/`;
-
-    // We need to get the CSRF token from the cookie or the page
-    // Assuming you have a helper or meta tag, otherwise here is a standard way:
+// ==========================================
+// 5. ROUTINE / TASK TOGGLING
+// ==========================================
+function toggleRoutineItem(taskId) {
+    const url = `/routine/toggle/${taskId}/`;
     const csrftoken = getCookie('csrftoken');
 
     fetch(url, {
@@ -177,17 +176,36 @@ function toggleRoutineItem(itemId) {
         return response.json();
     })
     .then(data => {
-        console.log(`Item ${data.item_id} status: ${data.status}`);
+        console.log(`Task ${data.task_id} status: ${data.status}`);
+
+        // --- Update Player Stats (XP, Level) ---
+        // Checks if elements exist (e.g., if Player Card is present in layout)
+        const elLevel = document.getElementById('player-level');
+        const elXPText = document.getElementById('player-xp-text');
+        const elXPBar = document.getElementById('player-xp-bar');
+
+        if (elLevel && data.new_level) elLevel.textContent = data.new_level;
+        if (elXPText && data.new_xp_current) elXPText.textContent = `${data.new_xp_current} / ${data.new_xp_required}`;
+        if (elXPBar && data.new_xp_percent) elXPBar.style.width = `${data.new_xp_percent}%`;
+
+        // --- Update Stats Radar Chart (if it exists on page) ---
+        if (window.apexStatsChart && data.new_stats) {
+            window.apexStatsChart.data.datasets[0].data = data.new_stats;
+            const newMax = Math.max(...data.new_stats);
+            window.apexStatsChart.options.scales.r.suggestedMax = newMax + 1;
+            window.apexStatsChart.update();
+        }
     })
     .catch(error => {
         console.error('Error toggling routine item:', error);
-        // Optional: Revert checkbox state if error
-        const checkbox = document.getElementById(`item${itemId}`);
+        // Revert Checkbox State on Error
+        // Note: HTML ID is "task-123", not "item123"
+        const checkbox = document.getElementById(`task-${taskId}`);
         if (checkbox) checkbox.checked = !checkbox.checked;
     });
 }
 
-// Helper to get CSRF token (if not already present in your main.js)
+// Helper to get CSRF token
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {

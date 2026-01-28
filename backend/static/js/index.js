@@ -4,9 +4,8 @@
  */
 
 (function() {
-    // Define chart variable in local scope so it's accessible to toggleHabit and init
-    // wrapped in an IIFE to prevent "Identifier already declared" errors.
-    let habitCountChart;
+    // Expose chart variable globally so it is accessible to toggleHabit reliably
+    window.apexHabitChart = null;
 
     /**
      * Toggle Habit Status
@@ -35,21 +34,23 @@
         .then(data => {
             // 1. Update Grid Icon using Backend HTML
             const iconSpan = cellElement.querySelector('.status-icon');
-            if (data.icon_html) {
+            if (data.icon_html && iconSpan) {
                 iconSpan.innerHTML = data.icon_html;
             }
 
             // 2. Update Bar Chart
-            if (habitCountChart && typeof dayIndex !== 'undefined') {
+            if (window.apexHabitChart && typeof dayIndex !== 'undefined') {
                 // Update the specific bar's data
-                habitCountChart.data.datasets[0].data[dayIndex] = data.daily_count;
+                window.apexHabitChart.data.datasets[0].data[dayIndex] = data.daily_count;
 
                 // Update the tooltip titles for this day in the global config
                 if (data.daily_titles) {
                     config.habitTitlesData[dayIndex] = data.daily_titles;
                 }
 
-                habitCountChart.update();
+                window.apexHabitChart.update();
+            } else {
+                console.warn("Habit chart not found or dayIndex is missing. Chart update skipped.");
             }
 
             // 3. Update Player Card ===
@@ -134,10 +135,10 @@
             });
         }
 
-        // 3. Render Habit Count Chart
+        // 3. Render Habit Count Chart (Assigned to Global Window Object)
         const habitChartCanvas = document.getElementById('habitCountChart');
         if (habitChartCanvas) {
-            habitCountChart = new Chart(habitChartCanvas, {
+            window.apexHabitChart = new Chart(habitChartCanvas, {
                 type: 'bar',
                 data: {
                     labels: config.monthDays,

@@ -1,29 +1,29 @@
-{% extends 'layouts/base.html' %}
+{% extends "layouts/base.html" %}
 {% load static %}
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/gate.css' %}">
-{% endblock %}
+{% endblock extra_css %}
 
 {% block content %}
 <div class="container-fluid py-4">
     
-    {% include 'gate/_header.html' %}
+    {% include "gate/_header.html" %}
 
     <div class="row">
         <div class="col-lg-8">
-            {% include 'gate/_form_main.html' %}
+            {% include "gate/_form_main.html" %}
         </div>
 
         <div class="col-md-4">
-            {% include 'gate/_routines.html' %}
+            {% include "gate/_routines.html" %}
         </div>
     </div>
 </div>
 
-{%block extra_js%}
+{% block extra_js %}
 <script type="module" src="{% static 'vendor/emoji-picker/index.js' %}"></script>
 <script src="{% static 'js/gate.js' %}"></script>
-{% endblock %}
+{% endblock extra_js %}
 
-{% endblock %}
+{% endblock content %}

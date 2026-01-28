@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 
 from apps.gate.forms import DailyEntryForm
 from apps.gate.models.daily_entry import DailyEntry
+from apps.profiles.models import PlayerProfile
 from apps.tasks.models import Task, TaskLog
 
 
@@ -79,18 +80,47 @@ def toggle_task_log(request, task_id):
     AJAX Endpoint: Toggles a Task's completion for today.
     Works for both Parent Tasks (Routines) and Subtasks (Items).
     """
+    profile = PlayerProfile.objects.filter(user=request.user).first()
+    if not profile:
+        return JsonResponse({"error": "Profile not found"}, status=404)
     task = get_object_or_404(Task, id=task_id, profile__user=request.user)
     today = timezone.now().date()
 
-    # Check for existing log today
+    # --- 1. Toggle Logic ---
     logs = TaskLog.objects.filter(task=task, completed_at__date=today)
 
-    if logs:
-        logs.delete()  # <--- Deletes ALL duplicates for this day
+    if logs.exists():
+        logs.delete()  # Deletes all duplicates
         status = "removed"
     else:
-        # Create Log (Signal handles XP)
         TaskLog.objects.create(task=task, completed_at=timezone.now())
         status = "added"
 
-    return JsonResponse({"status": status, "task_id": task_id})
+    # --- 2. Refresh Profile & Stats Data ---
+    profile.refresh_from_db()
+    stats = profile.stats
+
+    xp_percent = 0
+    if profile.xp_required > 0:
+        xp_percent = (profile.xp_current / profile.xp_required) * 100
+
+    new_stats_values = [
+        stats.str_level,
+        stats.int_level,
+        stats.cha_level,
+        stats.wil_level,
+        stats.wis_level,
+    ]
+
+    return JsonResponse(
+        {
+            "status": status,
+            "task_id": task_id,
+            # === Payload for Interactive UI ===
+            "new_level": profile.level,
+            "new_xp_current": profile.xp_current,
+            "new_xp_required": profile.xp_required,
+            "new_xp_percent": round(xp_percent, 1),
+            "new_stats": new_stats_values,
+        }
+    )
