@@ -241,11 +241,28 @@ def toggle_habit_log(request, task_id, date_str):
         TaskLog.objects.create(
             task=task,
             completed_at=log_time,
-            # removed manual xp_earned assignment
         )
         status = "added"
 
-    # Calculate the correct Icon HTML for the frontend to render
+    # --- Refresh Profile & Stats Data ---
+    profile.refresh_from_db()
+    stats = profile.stats
+
+    # Calculate XP Percent manually to ensure we send a float
+    xp_percent = 0
+    if profile.xp_required > 0:
+        xp_percent = (profile.xp_current / profile.xp_required) * 100
+
+    # Ensure this order matches your Chart.js labels: ["STR", "INT", "CHA", "WIL", "WIS"]
+    new_stats_values = [
+        stats.str_level,
+        stats.int_level,
+        stats.cha_level,
+        stats.wil_level,
+        stats.wis_level,
+    ]
+
+    # --- Icon Logic ---
     icon_html = ""
     if status == "added":
         # Completed: Emoji ✅
@@ -291,5 +308,10 @@ def toggle_habit_log(request, task_id, date_str):
             "task_id": task_id,
             "daily_count": daily_count,
             "daily_titles": daily_titles,
+            "new_level": profile.level,
+            "new_xp_current": profile.xp_current,
+            "new_xp_required": profile.xp_required,
+            "new_xp_percent": round(xp_percent, 1),
+            "new_stats": new_stats_values,
         }
     )

@@ -13,7 +13,11 @@ function renderStatsChart(labels, dataValues) {
     const maxLevel = Math.max(...dataValues);
     const scaleMax = maxLevel + 1;
 
-    new Chart(ctx, {
+    if (window.apexStatsChart) {
+        window.apexStatsChart.destroy(); // Cleanup if re-rendering
+    }
+
+    window.apexStatsChart = new Chart(ctx, {
         type: 'radar',
         data: {
             labels: labels, // Received from arguments

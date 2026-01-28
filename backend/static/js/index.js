@@ -51,6 +51,27 @@
 
                 habitCountChart.update();
             }
+
+            // 3. Update Player Card ===
+            const elLevel = document.getElementById('player-level');
+            const elXPText = document.getElementById('player-xp-text');
+            const elXPBar = document.getElementById('player-xp-bar');
+
+            if (elLevel) elLevel.textContent = data.new_level;
+            if (elXPText) elXPText.textContent = `${data.new_xp_current} / ${data.new_xp_required}`;
+            if (elXPBar) elXPBar.style.width = `${data.new_xp_percent}%`;
+
+            // === 4. Update Stats Radar Chart ===
+            if (window.apexStatsChart) {
+                // Update the data array
+                window.apexStatsChart.data.datasets[0].data = data.new_stats;
+                
+                // Optional: Dynamic Scaling (if stats grew, increase the chart scale)
+                const newMax = Math.max(...data.new_stats);
+                window.apexStatsChart.options.scales.r.suggestedMax = newMax + 1;
+                
+                window.apexStatsChart.update();
+            }
         })
         .catch(error => {
             console.error('Error toggling habit:', error);
