@@ -6,8 +6,12 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from apps.gate.forms import DailyEntryForm
-from apps.gate.models.daily_entry import DailyEntry
+from apps.gate.forms import (
+    DailyEntryForm,
+    NegativeHighlightFormSet,
+    PositiveHighlightFormSet,
+)
+from apps.gate.models import DailyEntry, DailyHighlight
 from apps.tasks.models import Task, TaskLog
 
 
@@ -29,6 +33,23 @@ def gate_view(request):
 
     # Note: Traditional POST handling removed in favor of Auto-Save.
     form = DailyEntryForm(instance=daily_entry)
+
+    # Initialize Formsets with specific querysets to separate them
+    pos_qs = daily_entry.highlights.filter(category=DailyHighlight.Category.POSITIVE)
+    neg_qs = daily_entry.highlights.filter(category=DailyHighlight.Category.NEGATIVE)
+
+    pos_formset = PositiveHighlightFormSet(
+        instance=daily_entry,
+        queryset=pos_qs,
+        prefix="pos",
+        initial=[{"category": DailyHighlight.Category.POSITIVE}],
+    )
+    neg_formset = NegativeHighlightFormSet(
+        instance=daily_entry,
+        queryset=neg_qs,
+        prefix="neg",
+        initial=[{"category": DailyHighlight.Category.NEGATIVE}],
+    )
 
     # 1. Fetch Top-Level Tasks
     # OPTIMIZATION: Annotate subtask_count so 'is_routine' doesn't hit DB
@@ -57,6 +78,8 @@ def gate_view(request):
     context = {
         "daily_entry": daily_entry,
         "form": form,
+        "pos_formset": pos_formset,
+        "neg_formset": neg_formset,
         "routines": routines,
         "tasks": standalone_tasks,
         "completed_task_ids": completed_task_ids,
@@ -76,12 +99,47 @@ def autosave_daily_entry(request):
         user=request.user, date=timezone.now().date()
     )
 
+    # 1. Main Form
     form = DailyEntryForm(request.POST, instance=daily_entry)
-    if form.is_valid():
+
+    # 2. Formsets
+    pos_formset = PositiveHighlightFormSet(
+        request.POST, instance=daily_entry, prefix="pos"
+    )
+    neg_formset = NegativeHighlightFormSet(
+        request.POST, instance=daily_entry, prefix="neg"
+    )
+
+    if form.is_valid() and pos_formset.is_valid() and neg_formset.is_valid():
         form.save()
+
+        # 1. Save Positives (Allow empty strings)
+        instances_pos = pos_formset.save(commit=False)
+        for obj in instances_pos:
+            obj.category = DailyHighlight.Category.POSITIVE
+            obj.save()
+        # Explicitly delete objects marked for deletion
+        for obj in pos_formset.deleted_objects:
+            obj.delete()
+
+        # 2. Save Improvements (Allow empty strings)
+        instances_neg = neg_formset.save(commit=False)
+        for obj in instances_neg:
+            obj.category = DailyHighlight.Category.NEGATIVE
+            obj.save()
+        for obj in neg_formset.deleted_objects:
+            obj.delete()
+
         return JsonResponse({"status": "success"})
+
     else:
-        return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+        # Combine errors for debugging
+        errors = {
+            "main": form.errors,
+            "pos": pos_formset.errors,
+            "neg": neg_formset.errors,
+        }
+        return JsonResponse({"status": "error", "errors": errors}, status=400)
 
 
 @login_required

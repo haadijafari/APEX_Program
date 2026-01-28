@@ -193,3 +193,11 @@ emoji-picker {
     --input-font-color: #fff;
     --category-font-color: #888;
 }
+
+
+
+/* Delete Button */
+.btn-delete-row:hover {
+    opacity: 1 !important;
+    color: #ff0000 !important; /* Makes the X red on hover */
+}

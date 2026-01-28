@@ -32,6 +32,7 @@ function initGate() {
     initEmojiPicker();
     initScoreBar();
     initAutoSave();
+    initDynamicHighlights();
 }
 
 
@@ -221,7 +222,7 @@ function initScoreBar() {
 // ==========================================
 
 // Expose trigger globally so other modules (like Emoji) can call it
-let triggerAutoSave = () => {}; 
+var triggerAutoSave = () => {}; 
 
 function initAutoSave() {
     const form = document.getElementById('dayPageForm');
@@ -324,3 +325,66 @@ window.toggleTask = function(itemId) {
         if (checkbox) checkbox.checked = !checkbox.checked;
     });
 };
+
+
+// ==========================================
+// 8. DYNAMIC HIGHLIGHTS MODULE
+// ==========================================
+function initDynamicHighlights() {
+    const form = document.getElementById('dayPageForm');
+    if (!form) return;
+
+    form.addEventListener('click', (e) => {
+        // 1. Handle ADD Button
+        const addBtn = e.target.closest('[data-add-row]');
+        if (addBtn) {
+            const prefix = addBtn.dataset.prefix;
+            addFormRow(prefix);
+            return;
+        }
+
+        // 2. Handle DELETE Button
+        const delBtn = e.target.closest('.btn-delete-row');
+        if (delBtn) {
+            const row = delBtn.closest('.highlight-row');
+            if (row) {
+                // Find the hidden django DELETE checkbox
+                const deleteInput = row.querySelector('input[name$="-DELETE"]');
+                if (deleteInput) {
+                    deleteInput.checked = true;
+                    // Visually hide the row
+                    row.style.display = 'none'; 
+                    // Save changes to DB immediately
+                    triggerAutoSave();
+                }
+            }
+        }
+    });
+
+    // Helper function to render the new row
+    function addFormRow(prefix) {
+        // ... (this function remains exactly the same as before) ...
+        const container = document.getElementById(`${prefix}-container`);
+        const totalFormsInput = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
+        const emptyFormTemplate = document.getElementById(`${prefix}-empty-form`);
+
+        if (!container || !totalFormsInput || !emptyFormTemplate) return;
+
+        const currentCount = parseInt(totalFormsInput.value);
+        const newRowHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, currentCount);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newRowHtml;
+
+        while (tempDiv.firstChild) {
+            container.appendChild(tempDiv.firstChild);
+        }
+
+        totalFormsInput.value = currentCount + 1;
+        
+        const newInputs = container.querySelectorAll('input[type="text"]');
+        if (newInputs.length > 0) {
+            newInputs[newInputs.length - 1].focus();
+        }
+    }
+}

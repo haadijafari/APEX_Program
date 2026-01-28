@@ -1,4 +1,4 @@
-<form method="POST" id="dayPageForm" onsubmit="return false;" data-autosave-url="{% url 'gate:autosave_daily_entry' %}">
+<form method="post" id="dayPageForm" onsubmit="return false;" data-autosave-url="{% url 'gate:autosave_daily_entry' %}">
     {% csrf_token %}
     
     <style>
@@ -108,13 +108,104 @@
 
     <div class="row">
         <div class="col-md-6 mb-3">
-            <label class="form-label fw-bold text-success small text-uppercase">Positive Highlights</label>
-            {{ form.positives }}
+            <label class="form-label fw-bold text-success small text-uppercase d-flex justify-content-between align-items-center">
+                Positive Highlights
+                <button type="button" class="btn btn-sm btn-link text-success p-0 text-decoration-none fw-bold" 
+                        data-add-row="true" data-prefix="pos" style="font-size: 0.75rem;">
+                    + ADD
+                </button>
+            </label>
+            
+            <div id="pos-container">
+                {{ pos_formset.management_form }}
+                {% for form in pos_formset %}
+                    <div class="highlight-row input-group mb-2 align-items-center">
+                        {{ form.id }}
+                        {{ form.category }}
+                        {{ form.content }}
+                        
+                        <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none" 
+                                title="Delete" style="opacity: 0.6; transition: opacity 0.2s;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+
+                        <div class="d-none">{{ form.DELETE }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div id="pos-empty-form" class="d-none">
+                <div class="highlight-row input-group mb-2 align-items-center">
+                    {{ pos_formset.empty_form.id }}
+                    <input type="hidden" name="pos-__prefix__-category" value="POS">
+                    {{ pos_formset.empty_form.content }}
+                    
+                    <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none" 
+                            title="Delete" style="opacity: 0.6; transition: opacity 0.2s;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    
+                    <div class="d-none">{{ pos_formset.empty_form.DELETE }}</div>
+                </div>
+            </div>
         </div>
+
         <div class="col-md-6 mb-3">
-            <label class="form-label fw-bold text-danger small text-uppercase">Areas to Improve</label>
-            {{ form.negatives }}
+            <label class="form-label fw-bold text-danger small text-uppercase d-flex justify-content-between align-items-center">
+                Areas to Improve
+                <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-bold" 
+                        data-add-row="true" data-prefix="neg" style="font-size: 0.75rem;">
+                    + ADD
+                </button>
+            </label>
+            
+            <div id="neg-container">
+                {{ neg_formset.management_form }}
+                {% for form in neg_formset %}
+                    <div class="highlight-row input-group mb-2 align-items-center">
+                        {{ form.id }}
+                        {{ form.category }}
+                        {{ form.content }}
+                        
+                        <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none" 
+                                title="Delete" style="opacity: 0.6; transition: opacity 0.2s;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                        
+                        <div class="d-none">{{ form.DELETE }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div id="neg-empty-form" class="d-none">
+                <div class="highlight-row input-group mb-2 align-items-center">
+                    {{ neg_formset.empty_form.id }}
+                    <input type="hidden" name="neg-__prefix__-category" value="NEG">
+                    {{ neg_formset.empty_form.content }}
+                    
+                    <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none" 
+                            title="Delete" style="opacity: 0.6; transition: opacity 0.2s;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    
+                    <div class="d-none">{{ neg_formset.empty_form.DELETE }}</div>
+                </div>
+            </div>
         </div>
+    </div>
+    <div class="row">
         <div class="col-md-12 mb-3">
             <label class="form-label fw-bold text-warning small text-uppercase">Financial Log</label>
             {{ form.financial_notes }}

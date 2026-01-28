@@ -1,6 +1,7 @@
 from django import forms
+from django.forms import HiddenInput, TextInput, inlineformset_factory
 
-from apps.gate.models.daily_entry import DailyEntry
+from apps.gate.models import DailyEntry, DailyHighlight
 
 # Create explicit choices for the Score (1-10)
 RATING_CHOICES = [(i, str(i)) for i in range(1, 11)]
@@ -59,18 +60,6 @@ class DailyEntryForm(forms.ModelForm):
                     "rows": 2,
                 }
             ),
-            "positives": forms.Textarea(
-                attrs={
-                    "class": "form-control bg-dark text-white border-secondary",
-                    "rows": 3,
-                }
-            ),
-            "negatives": forms.Textarea(
-                attrs={
-                    "class": "form-control bg-dark text-white border-secondary",
-                    "rows": 3,
-                }
-            ),
             "financial_notes": forms.Textarea(
                 attrs={
                     "class": "form-control bg-dark text-white border-secondary",
@@ -84,3 +73,33 @@ class DailyEntryForm(forms.ModelForm):
                 }
             ),
         }
+
+
+# Base widget config for the highlight rows
+HighlightWidget = TextInput(
+    attrs={
+        "class": "form-control bg-dark text-white border-secondary",
+        "placeholder": "Write here...",
+        "autocomplete": "off",
+    }
+)
+
+# Factory for Positives
+PositiveHighlightFormSet = inlineformset_factory(
+    DailyEntry,
+    DailyHighlight,
+    fields=["content", "category"],
+    widgets={"content": HighlightWidget, "category": HiddenInput()},
+    extra=0,
+    can_delete=True,
+)
+
+# Factory for Negatives
+NegativeHighlightFormSet = inlineformset_factory(
+    DailyEntry,
+    DailyHighlight,
+    fields=["content", "category"],
+    widgets={"content": HighlightWidget, "category": HiddenInput()},
+    extra=0,
+    can_delete=True,
+)

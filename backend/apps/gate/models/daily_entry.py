@@ -52,19 +52,8 @@ class DailyEntry(models.Model):
     )
 
     # --- Reflections ---
-    # Storing these as text blocks is more flexible than 3 separate fields
-    positives = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name=_("Positive Highlights"),
-        help_text=_("What went well today?"),
-    )
-
-    negatives = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name=_("Negative Highlights"),
-        help_text=_("What didn't go well?"),
+    diary = models.TextField(
+        blank=True, null=True, verbose_name=_("Diary / Your Notes")
     )
 
     notes_tomorrow = models.TextField(
