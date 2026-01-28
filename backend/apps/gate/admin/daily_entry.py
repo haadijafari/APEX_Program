@@ -1,15 +1,26 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
-from apps.gate.models import DailyEntry
+from apps.gate.models import DailyEntry, DailyHighlight
+
+
+class DailyHighlightInline(TabularInline):
+    model = DailyHighlight
+    extra = 0
+    fields = ("category", "content")
+    list_display = ("category", "content")
 
 
 @admin.register(DailyEntry)
 class DailyEntryAdmin(ModelAdmin):
     list_display = ("date", "user", "rating", "emoji", "created_at")
     list_filter = ("date", "rating", "emoji")
-    search_fields = ("quote", "lesson_of_day", "positives")
+    # Removed "positives" from search_fields
+    search_fields = ("quote", "lesson_of_day")
     date_hierarchy = "date"
+
+    # Add the new Inline to manage Highlights
+    inlines = [DailyHighlightInline]
 
     fieldsets = (
         ("Header", {"fields": ("user", "date", "event")}),
@@ -17,6 +28,7 @@ class DailyEntryAdmin(ModelAdmin):
         ("Inspiration", {"fields": ("quote", "lesson_of_day")}),
         (
             "Reflections",
-            {"fields": ("positives", "negatives", "financial_notes", "notes_tomorrow")},
+            # Removed "positives" and "negatives" from here
+            {"fields": ("financial_notes", "notes_tomorrow")},
         ),
     )
