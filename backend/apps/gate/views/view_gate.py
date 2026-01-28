@@ -83,10 +83,10 @@ def toggle_task_log(request, task_id):
     today = timezone.now().date()
 
     # Check for existing log today
-    log = TaskLog.objects.filter(task=task, completed_at__date=today).first()
+    logs = TaskLog.objects.filter(task=task, completed_at__date=today)
 
-    if log:
-        log.delete()
+    if logs:
+        logs.delete()  # <--- Deletes ALL duplicates for this day
         status = "removed"
     else:
         # Create Log (Signal handles XP)

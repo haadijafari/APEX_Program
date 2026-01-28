@@ -202,3 +202,5 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+window.toggleTask = toggleRoutineItem;
