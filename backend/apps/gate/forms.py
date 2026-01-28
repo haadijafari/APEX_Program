@@ -9,7 +9,7 @@ RATING_CHOICES = [(i, str(i)) for i in range(1, 11)]
 class DailyEntryForm(forms.ModelForm):
     class Meta:
         model = DailyEntry
-        fields = "__all__"
+        exclude = ["user", "date"]
         widgets = {
             # Use RadioSelect for the Score
             "rating": forms.RadioSelect(choices=RATING_CHOICES),

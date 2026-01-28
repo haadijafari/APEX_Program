@@ -29,13 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Calculate difference
         let diffMins = wakeTotalMins - sleepTotalMins;
-        
-        // Handle midnight crossing (e.g., Sleep 23:00, Wake 07:00)
-        if (diffMins < 0) {
-            diffMins += (24 * 60); 
-        }
+        if (diffMins < 0) diffMins += (24 * 60); 
 
-        // Add Nap Time
         let napHours = napInput ? (parseFloat(napInput.value) || 0) : 0;
         let napMins = napHours * 60;
 
@@ -60,6 +55,82 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // ==========================================
+    // 5. AUTO SAVE LOGIC
+    // ==========================================
+    const form = document.getElementById('dayPageForm');
+    const statusIndicator = document.getElementById('save-status');
+
+    function saveData() {
+        if (!form) return;
+
+        if (statusIndicator) {
+            statusIndicator.textContent = "Saving...";
+            statusIndicator.className = "small fw-bold text-uppercase text-secondary"; 
+        }
+        
+        const formData = new FormData(form);
+        const url = form.dataset.autosaveUrl || "/gate/autosave/";
+        
+        let csrfToken = "";
+        const csrfInput = form.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) csrfToken = csrfInput.value;
+
+        fetch(url, { 
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                if (statusIndicator) {
+                    statusIndicator.textContent = "Saved";
+                    statusIndicator.className = "small fw-bold text-uppercase text-success";
+                    setTimeout(() => { 
+                        if (statusIndicator.textContent === "Saved") {
+                            statusIndicator.textContent = ""; 
+                        }
+                    }, 2000);
+                }
+            } else {
+                console.error("Save errors:", data.errors);
+                if (statusIndicator) {
+                    statusIndicator.textContent = "Error";
+                    statusIndicator.className = "small fw-bold text-uppercase text-danger";
+                }
+            }
+        })
+        .catch(err => {
+            console.error("Network error:", err);
+            if (statusIndicator) statusIndicator.textContent = "Offline";
+        });
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    if (form) {
+        const debouncedSave = debounce(saveData, 1000);
+
+        form.addEventListener('input', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                debouncedSave();
+            }
+        });
+
+        form.addEventListener('change', (e) => {
+            if (e.target.type === 'radio' || e.target.tagName === 'SELECT' || e.target.type === 'time') {
+                saveData();
+            }
+        });
+    }
+
+    // ==========================================
     // 2. EMOJI PICKER INTERACTION
     // ==========================================
     const emojiInput = document.getElementById('mood-picker-input');
@@ -81,11 +152,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Handle Emoji Selection
         picker.addEventListener('emoji-click', (event) => {
-            emojiInput.value = event.detail.unicode; // Fill input
-            popover.style.display = 'none'; // Hide popup
+            emojiInput.value = event.detail.unicode; 
+            popover.style.display = 'none'; 
+            saveData(); 
+            setTimeout(updateMoodVisuals, 50);
         });
 
-        // Close when clicking outside
         document.addEventListener('click', (e) => {
             // If click is NOT on the slot AND NOT on the popup, close it
             if (!moodSlot.contains(e.target) && !popover.contains(e.target)) {
@@ -95,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================
-    // 3. SCORE BAR VISUALS (Fill Effect)
+    // 3. SCORE BAR VISUALS
     // ==========================================
     const scoreContainer = document.getElementById('score-container');
     
@@ -144,24 +216,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (moodInput) {
         // Run on load
         updateMoodVisuals();
-        
-        // We need to hook into the emoji picker click event we defined earlier
-        const pickerElement = document.querySelector('emoji-picker');
-        if (pickerElement) {
-            pickerElement.addEventListener('emoji-click', () => {
-                // Small delay to allow value to populate
-                setTimeout(updateMoodVisuals, 50);
-            });
-        }
     }
 });
 
 
-// ==========================================
-// 5. ROUTINE / TASK TOGGLING
-// ==========================================
-function toggleRoutineItem(taskId) {
-    const url = `/routine/toggle/${taskId}/`;
+function toggleRoutineItem(itemId) {
+    const url = `/routine/toggle/${itemId}/`;
     const csrftoken = getCookie('csrftoken');
 
     fetch(url, {
@@ -176,31 +236,11 @@ function toggleRoutineItem(taskId) {
         return response.json();
     })
     .then(data => {
-        console.log(`Task ${data.task_id} status: ${data.status}`);
-
-        // --- Update Player Stats (XP, Level) ---
-        // Checks if elements exist (e.g., if Player Card is present in layout)
-        const elLevel = document.getElementById('player-level');
-        const elXPText = document.getElementById('player-xp-text');
-        const elXPBar = document.getElementById('player-xp-bar');
-
-        if (elLevel && data.new_level) elLevel.textContent = data.new_level;
-        if (elXPText && data.new_xp_current) elXPText.textContent = `${data.new_xp_current} / ${data.new_xp_required}`;
-        if (elXPBar && data.new_xp_percent) elXPBar.style.width = `${data.new_xp_percent}%`;
-
-        // --- Update Stats Radar Chart (if it exists on page) ---
-        if (window.apexStatsChart && data.new_stats) {
-            window.apexStatsChart.data.datasets[0].data = data.new_stats;
-            const newMax = Math.max(...data.new_stats);
-            window.apexStatsChart.options.scales.r.suggestedMax = newMax + 1;
-            window.apexStatsChart.update();
-        }
+        console.log(`Item ${data.item_id} status: ${data.status}`);
     })
     .catch(error => {
         console.error('Error toggling routine item:', error);
-        // Revert Checkbox State on Error
-        // Note: HTML ID is "task-123", not "item123"
-        const checkbox = document.getElementById(`task-${taskId}`);
+        const checkbox = document.getElementById(`item${itemId}`);
         if (checkbox) checkbox.checked = !checkbox.checked;
     });
 }

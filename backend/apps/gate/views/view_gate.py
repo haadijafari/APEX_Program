@@ -2,13 +2,12 @@ import jdatetime
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.gate.forms import DailyEntryForm
 from apps.gate.models.daily_entry import DailyEntry
-from apps.profiles.models import PlayerProfile
 from apps.tasks.models import Task, TaskLog
 
 
@@ -28,14 +27,8 @@ def gate_view(request):
         user=request.user, date=today
     )
 
-    # Handle Form Submission
-    if request.method == "POST":
-        form = DailyEntryForm(request.POST, instance=daily_entry)
-        if form.is_valid():
-            form.save()
-            return redirect("gate:gate")
-    else:
-        form = DailyEntryForm(instance=daily_entry)
+    # Note: Traditional POST handling removed in favor of Auto-Save.
+    form = DailyEntryForm(instance=daily_entry)
 
     # 1. Fetch Top-Level Tasks
     # OPTIMIZATION: Annotate subtask_count so 'is_routine' doesn't hit DB
@@ -64,8 +57,8 @@ def gate_view(request):
     context = {
         "daily_entry": daily_entry,
         "form": form,
-        "routines": routines,  # Now available for gate_routines.html
-        "tasks": standalone_tasks,  # Available for other parts of gate.html
+        "routines": routines,
+        "tasks": standalone_tasks,
         "completed_task_ids": completed_task_ids,
         "today": today,
         "jalali_date_str": jalali_date_str,
@@ -75,52 +68,40 @@ def gate_view(request):
 
 @login_required
 @require_POST
+def autosave_daily_entry(request):
+    """
+    AJAX Endpoint: Auto-saves the DailyEntry form fields.
+    """
+    daily_entry, _ = DailyEntry.objects.get_or_create(
+        user=request.user, date=timezone.now().date()
+    )
+
+    form = DailyEntryForm(request.POST, instance=daily_entry)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"status": "success"})
+    else:
+        return JsonResponse({"status": "error", "errors": form.errors}, status=400)
+
+
+@login_required
+@require_POST
 def toggle_task_log(request, task_id):
     """
     AJAX Endpoint: Toggles a Task's completion for today.
     Works for both Parent Tasks (Routines) and Subtasks (Items).
     """
-    profile = PlayerProfile.objects.filter(user=request.user).first()
-    if not profile:
-        return JsonResponse({"error": "Profile not found"}, status=404)
     task = get_object_or_404(Task, id=task_id, profile__user=request.user)
     today = timezone.now().date()
 
-    # --- 1. Toggle Logic ---
+    # Check for existing log today
     logs = TaskLog.objects.filter(task=task, completed_at__date=today)
 
-    if logs.exists():
-        logs.delete()  # Deletes all duplicates
+    if logs:
+        logs.delete()
         status = "removed"
     else:
         TaskLog.objects.create(task=task, completed_at=timezone.now())
         status = "added"
 
-    # --- 2. Refresh Profile & Stats Data ---
-    profile.refresh_from_db()
-    stats = profile.stats
-
-    xp_percent = 0
-    if profile.xp_required > 0:
-        xp_percent = (profile.xp_current / profile.xp_required) * 100
-
-    new_stats_values = [
-        stats.str_level,
-        stats.int_level,
-        stats.cha_level,
-        stats.wil_level,
-        stats.wis_level,
-    ]
-
-    return JsonResponse(
-        {
-            "status": status,
-            "task_id": task_id,
-            # === Payload for Interactive UI ===
-            "new_level": profile.level,
-            "new_xp_current": profile.xp_current,
-            "new_xp_required": profile.xp_required,
-            "new_xp_percent": round(xp_percent, 1),
-            "new_stats": new_stats_values,
-        }
-    )
+    return JsonResponse({"status": status, "task_id": task_id})

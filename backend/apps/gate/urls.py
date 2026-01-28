@@ -7,6 +7,7 @@ app_name = "gate"
 urlpatterns = [
     path("", views.IndexView.as_view(), name="index"),
     path("gate/", views.gate_view, name="gate"),
+    path("gate/autosave/", views.autosave_daily_entry, name="autosave_daily_entry"),
     path(
         "habit/toggle/<int:task_id>/<str:date_str>/",
         views.toggle_habit_log,

@@ -1,6 +1,18 @@
-<form method="POST" id="dayPageForm">
+<form method="POST" id="dayPageForm" onsubmit="return false;" data-autosave-url="{% url 'gate:autosave_daily_entry' %}">
     {% csrf_token %}
     
+    <style>
+        #dayPageForm button[type="submit"],
+        #dayPageForm input[type="submit"] {
+            display: none !important;
+        }
+    </style>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="text-secondary small fw-bold text-uppercase ls-1">Daily Log</span>
+        <span id="save-status" class="small fw-bold text-uppercase transition-all" style="min-height: 20px;"></span>
+    </div>
+
     <div class="card shadow-sm mb-4 border-system bg-dark">
         <div class="card-body">
             <label class="fw-bold text-system mb-2 small text-uppercase">Quote of the Day</label>
