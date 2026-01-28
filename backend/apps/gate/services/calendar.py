@@ -68,6 +68,8 @@ def get_jalali_calendar_context(user):
             {
                 "day": day,
                 "is_today": (date_obj == j_today),
+                "is_past": (date_obj < j_today),
+                "is_future": (date_obj > j_today),
                 "has_log": has_log,
                 "full_date": date_obj.strftime("%Y-%m-%d"),
             }
