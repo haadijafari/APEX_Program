@@ -60,6 +60,12 @@ class DailyEntryForm(forms.ModelForm):
                     "rows": 2,
                 }
             ),
+            "diary": forms.Textarea(
+                attrs={
+                    "class": "form-control bg-dark text-white border-secondary",
+                    "rows": 3,
+                }
+            ),
             "financial_notes": forms.Textarea(
                 attrs={
                     "class": "form-control bg-dark text-white border-secondary",
