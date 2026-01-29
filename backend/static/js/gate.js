@@ -1,5 +1,13 @@
 /* backend/static/js/gate.js */
 
+(function() {
+    // 1. IDEMPOTENCY GUARD: Prevent double-loading
+    if (window.HAS_GATE_JS_LOADED) {
+        console.warn("⚠️ Gate.js attempted to load a second time. Skipping.");
+        return;
+    }
+    window.HAS_GATE_JS_LOADED = true;
+
 /**
  * ==========================================
  * GATE API LAYER
@@ -253,15 +261,13 @@ class DailyLogForm {
  * ==========================================
  */
 document.addEventListener('DOMContentLoaded', () => {
-    if (window.HAS_GATE_JS_LOADED) return;
-    window.HAS_GATE_JS_LOADED = true;
-
-    console.log("🚀 Gate.js Initialized (Refactored)");
+    console.log("🚀 Gate.js Initialized");
 
     new SleepModule();
     new DailyLogForm('dayPageForm');
 
     // Global helper for the Sidebar Routines
+    // Must be explicitly attached to window to be accessible by HTML onclick=""
     window.toggleTask = async function(itemId) {
         try {
             const data = await GateAPI.toggleRoutine(itemId);
@@ -273,3 +279,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 });
+
+})(); // End IIFE

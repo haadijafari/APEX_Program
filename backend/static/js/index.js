@@ -1,5 +1,9 @@
 /* backend/static/js/index.js */
 
+(function() {
+    if (window.HAS_INDEX_JS_LOADED) return;
+    window.HAS_INDEX_JS_LOADED = true;
+
 /**
  * ==========================================
  * INDEX API LAYER
@@ -46,7 +50,7 @@ class DashboardCharts {
         // Relies on global renderStatsChart from stats.js
         if (typeof renderStatsChart === 'function') {
             this.charts.stats = renderStatsChart(this.config.statLabels, this.config.statValues);
-            // Store reference globally if needed by stats.js, or capture the return
+            // Store reference globally if needed by stats.js
             window.apexStatsChart = this.charts.stats; 
         }
     }
@@ -208,7 +212,7 @@ class HabitGrid {
             cell.parentElement.querySelectorAll('td').forEach(td => td.classList.add('habit-crosshair-active'));
             const colIdx = cell.cellIndex + 1;
             table.querySelectorAll(`td:nth-child(${colIdx}), th:nth-child(${colIdx})`)
-                 .forEach(el => el.classList.add('habit-crosshair-active'));
+                    .forEach(el => el.classList.add('habit-crosshair-active'));
         });
 
         table.addEventListener('mouseleave', () => {
@@ -221,8 +225,10 @@ class HabitGrid {
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.apexPageData) return;
     
-    console.log("🚀 Index.js Initialized (Refactored)");
+    console.log("🚀 Index.js Initialized");
 
     const dashboardCharts = new DashboardCharts(window.apexPageData);
     new HabitGrid(dashboardCharts);
 });
+
+})();
