@@ -1,20 +1,13 @@
-from datetime import datetime, timedelta
-
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
 from apps.gate.models import DailyEntry
-from apps.gate.services.calendar import (
-    get_current_month_info,
-    get_jalali_calendar_context,
-)
-from apps.profiles.models import PlayerProfile
-from apps.tasks.models import Task, TaskLog
+from apps.gate.services import calendar as calendar_service
+from apps.gate.services import index as index_service
 
 
 class IndexView(LoginRequiredMixin, TemplateView):
@@ -30,171 +23,36 @@ class IndexView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         today = timezone.now().date()
 
-        # --- 1. Player Stats
-        profile, created = PlayerProfile.objects.get_or_create(user=user)
-        stats = getattr(profile, "stats", None)
+        # 1. Calendar Setup
+        month_info = calendar_service.get_current_month_info()
 
-        if stats:
-            stat_labels = ["STR", "INT", "CHA", "WIL", "WIS"]
-            stat_values = [
-                stats.str_level,
-                stats.int_level,
-                stats.cha_level,
-                stats.wil_level,
-                stats.wis_level,
-            ]
-        else:
-            stat_labels = ["STR", "INT", "CHA", "WIL", "WIS"]
-            stat_values = [1, 1, 1, 1, 1]
-
-        # --- 2. Calendar Setup
-        month_info = get_current_month_info()
-        days_in_month = month_info["days_in_month"]
-        month_days = month_info["month_days"]
-        g_start = month_info["g_start"]
-        g_end = month_info["g_end"]
-        j_month_start = month_info["j_month_start"]
-        j_today = month_info["j_today"]
-
-        # --- 3. Sleep Diagram Data ---
-        daily_entries = DailyEntry.objects.filter(
-            user=user, date__range=[g_start, g_end]
+        # 2. Service Calls
+        player_context = index_service.get_player_stats(user)
+        sleep_data = index_service.get_sleep_data(user, month_info)
+        habit_context = index_service.get_habit_grid_context(
+            user, player_context["profile"], month_info
         )
-        sleep_map = {dp.date: dp for dp in daily_entries}
+        calendar_data = calendar_service.get_jalali_calendar_context(user)
 
-        sleep_data = []
-        for d in range(days_in_month):
-            c_j_date = j_month_start + timedelta(days=d)
-            c_g_date = c_j_date.togregorian()
+        # 3. Simple Streak Data
+        has_gate_log = DailyEntry.objects.filter(user=user, date=today).exists()
+        streak_count = DailyEntry.objects.filter(user=user).count()
 
-            entry = sleep_map.get(c_g_date)
-            duration = 0
-            if entry and entry.wake_up_time and entry.sleep_time:
-                wt = entry.wake_up_time
-                st = entry.sleep_time
-                wake_hours = wt.hour + (wt.minute / 60.0)
-                sleep_hours = st.hour + (st.minute / 60.0)
-
-                if st > wt:
-                    duration = (24.0 - sleep_hours) + wake_hours
-                else:
-                    duration = wake_hours - sleep_hours
-
-            sleep_data.append(round(duration, 1))
-
-        # --- 4. Habit Grid & Habit Counts ---
-        habits = Task.objects.filter(
-            profile=profile,
-            is_active=True,
-            schedule__isnull=False,
-        ).select_related("schedule")
-
-        habit_logs = TaskLog.objects.filter(
-            task__in=habits,
-            completed_at__date__range=[g_start, g_end],
-        ).select_related("task")
-
-        habit_completion_map = set()
-        daily_habit_counts_map = {}
-        daily_habit_titles_map = {}
-
-        for log in habit_logs:
-            c_date = log.completed_at.date()
-            c_date_str = c_date.strftime("%Y-%m-%d")
-
-            # Map completions: { (task_id, date_str) }
-            habit_completion_map.add((log.task.id, c_date_str))
-
-            # Daily Counts
-            daily_habit_counts_map[c_date_str] = (
-                daily_habit_counts_map.get(c_date_str, 0) + 1
-            )
-
-            # Titles
-            if c_date_str not in daily_habit_titles_map:
-                daily_habit_titles_map[c_date_str] = []
-            daily_habit_titles_map[c_date_str].append(log.task.title)
-
-        # Build Grid
-        habit_grid = []
-        for habit in habits:
-            row = []
-            # FIX: habit is a Task object, so use habit.title directly
-            title = habit.title
-
-            # Get Start Date for coloring logic
-            start_date = None
-            if hasattr(habit, "schedule") and habit.schedule.start_time:
-                start_date = habit.schedule.start_time.date()
-
-            for d in range(days_in_month):
-                c_j_date = j_month_start + timedelta(days=d)
-                c_g_date = c_j_date.togregorian()  # This is a date object
-                c_g_date_str = c_j_date.togregorian().strftime("%Y-%m-%d")
-
-                is_done = (habit.id, c_g_date_str) in habit_completion_map
-                is_today = c_j_date == j_today
-
-                # Determine State for Coloring
-                state = "future"  # Default for future
-                if is_done:
-                    state = "completed"
-                elif c_g_date == today:
-                    state = "today"
-                elif c_g_date < today:
-                    # Past Logic
-                    if start_date and c_g_date < start_date:
-                        state = "before-start"  # Grey
-                    else:
-                        state = "missed"  # Red
-                elif c_g_date > today:
-                    state = "future"
-
-                row.append(
-                    {
-                        "date": c_g_date_str,
-                        "status": is_done,
-                        "state": state,
-                        "is_today": is_today,
-                    }
-                )
-
-            habit_grid.append({"id": habit.id, "title": title, "status": row})
-
-        # Build Charts
-        habit_counts_data = []
-        habit_titles_data = []
-
-        for d in range(days_in_month):
-            c_j_date = j_month_start + timedelta(days=d)
-            c_g_date_str = c_j_date.togregorian().strftime("%Y-%m-%d")
-
-            habit_counts_data.append(daily_habit_counts_map.get(c_g_date_str, 0))
-            habit_titles_data.append(daily_habit_titles_map.get(c_g_date_str, []))
-
+        # 4. Merge Everything
         context.update(
             {
                 "today": today,
-                "profile": profile,
-                "has_gate_log": DailyEntry.objects.filter(
-                    user=user, date=today
-                ).exists(),
-                "streak": DailyEntry.objects.filter(user=user).count(),
-                "stat_labels": stat_labels,
-                "stat_values": stat_values,
-                "month_days": month_days,
-                "current_month_name": j_today.strftime("%B"),
-                "current_day_number": j_today.day,
+                "has_gate_log": has_gate_log,
+                "streak": streak_count,
+                "month_days": month_info["month_days"],
+                "current_month_name": month_info["j_today"].strftime("%B"),
+                "current_day_number": month_info["j_today"].day,
                 "sleep_data": sleep_data,
-                "habit_grid": habit_grid,
-                "habit_counts_data": habit_counts_data,
-                "habit_titles_data": habit_titles_data,
-                "total_active_habits": habits.count(),
+                **player_context,
+                **habit_context,
+                **calendar_data,
             }
         )
-
-        calendar_data = get_jalali_calendar_context(user)
-        context.update(calendar_data)
 
         return context
 
@@ -205,115 +63,13 @@ def toggle_habit_log(request, task_id, date_str):
     """
     AJAX Endpoint: Toggles the completion status of a habit.
     """
-    profile = PlayerProfile.objects.filter(user=request.user).first()
-    if not profile:
-        return JsonResponse({"error": "Profile not found"}, status=404)
-
-    task = get_object_or_404(
-        Task.objects.select_related("schedule"), id=task_id, profile=profile
-    )
-
     try:
-        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return JsonResponse({"error": "Invalid date format"}, status=400)
-
-    # Check for existing log
-    logs = TaskLog.objects.filter(task=task, completed_at__date=date_obj)
-
-    if logs.exists():
-        # Toggle OFF
-        logs.delete()
-        status = "removed"
-    else:
-        # Toggle ON
-        now = timezone.now()
-
-        if date_obj == now.date():
-            log_time = now
-        else:
-            # Set time to 12:00 PM to avoid timezone edge cases at midnight
-            # This ensures the log stays on the correct visual "day"
-            dt_naive = datetime.combine(date_obj, datetime.min.time().replace(hour=12))
-            log_time = timezone.make_aware(dt_naive)
-
-        # Create Log (Signal handles XP)
-        TaskLog.objects.create(
-            task=task,
-            completed_at=log_time,
+        data = index_service.perform_habit_toggle(request.user, task_id, date_str)
+        return JsonResponse(data)
+    except ValueError as e:
+        return JsonResponse({"error": str(e)}, status=400)
+    except Exception as e:
+        # Generic catch for unexpected errors
+        return JsonResponse(
+            {"error": "An unexpected error occurred.", "details": str(e)}, status=500
         )
-        status = "added"
-
-    # --- Refresh Profile & Stats Data ---
-    profile.refresh_from_db()
-    stats = profile.stats
-
-    # Calculate XP Percent manually to ensure we send a float
-    xp_percent = 0
-    if profile.xp_required > 0:
-        xp_percent = (profile.xp_current / profile.xp_required) * 100
-
-    # Ensure this order matches your Chart.js labels: ["STR", "INT", "CHA", "WIL", "WIS"]
-    new_stats_values = [
-        stats.str_level,
-        stats.int_level,
-        stats.cha_level,
-        stats.wil_level,
-        stats.wis_level,
-    ]
-
-    # --- Icon Logic ---
-    icon_html = ""
-    if status == "added":
-        # Completed: Emoji ✅
-        icon_html = '<span class="fs-6">✅</span>'
-    else:
-        # Undone State Logic
-        today = timezone.now().date()
-        start_date = (
-            task.schedule.start_time.date()
-            if (task.schedule and task.schedule.start_time)
-            else None
-        )
-
-        if date_obj == today:
-            # Today: Yellow Dot
-            icon_html = '<span class="text-warning">●</span>'
-        elif date_obj > today:
-            # Future: Grey Dot
-            icon_html = '<span class="text-secondary opacity-25">·</span>'
-        else:
-            # Past
-            if start_date and date_obj < start_date:
-                # Before Start: Grey Dot
-                icon_html = '<span class="text-secondary opacity-25">·</span>'
-            else:
-                # Missed: Faded Red X (Removed fw-bold, added opacity-50)
-                icon_html = '<span class="text-danger opacity-50">✕</span>'
-
-    # Recalculate Daily Count
-    habits = Task.objects.filter(
-        profile=profile, is_active=True, schedule__isnull=False
-    )
-    updated_logs = TaskLog.objects.filter(
-        task__in=habits, completed_at__date=date_obj
-    ).select_related("task")
-
-    daily_count = updated_logs.count()
-    daily_titles = [log.task.title for log in updated_logs]
-
-    return JsonResponse(
-        {
-            "status": status,
-            "icon_html": icon_html,
-            "date": date_str,
-            "task_id": task_id,
-            "daily_count": daily_count,
-            "daily_titles": daily_titles,
-            "new_level": profile.level,
-            "new_xp_current": profile.xp_current,
-            "new_xp_required": profile.xp_required,
-            "new_xp_percent": round(xp_percent, 1),
-            "new_stats": new_stats_values,
-        }
-    )
