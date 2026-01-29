@@ -1,390 +1,275 @@
 /* backend/static/js/gate.js */
 
 /**
- * GATE MODULE
- * Handles the interactivity for the Daily Log (Gate) page.
- * Includes: Sleep Calculator, Emoji Picker, Energy Bar Visuals, and Auto-Save.
+ * ==========================================
+ * GATE API LAYER
+ * Handles all server communication.
+ * ==========================================
  */
+class GateAPI {
+    static getCookie(name) {
+        if (!document.cookie) return null;
+        const xsrfCookies = document.cookie.split(';')
+            .map(c => c.trim())
+            .filter(c => c.startsWith(name + '='));
+        return xsrfCookies.length ? decodeURIComponent(xsrfCookies[0].substring(name.length + 1)) : null;
+    }
 
-// ==========================================
-// 1. IDEMPOTENCY GUARD
-// ==========================================
-// Prevents the script from running twice if injected multiple times by Django/Tools.
-if (window.HAS_GATE_JS_LOADED) {
-    console.warn("⚠️ Gate.js attempted to load a second time. Skipping.");
-} else {
-    window.HAS_GATE_JS_LOADED = true;
+    static async autoSave(formElement) {
+        const url = formElement.dataset.autosaveUrl || "/gate/autosave/";
+        const formData = new FormData(formElement);
+        const csrfToken = formElement.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initGate();
-    });
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "X-CSRFToken": csrfToken },
+                body: formData
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("AutoSave Failed:", error);
+            throw error;
+        }
+    }
+
+    static async toggleRoutine(itemId) {
+        const url = `/routine/toggle/${itemId}/`;
+        const csrfToken = this.getCookie('csrftoken');
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                },
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Routine Toggle Failed:", error);
+            throw error;
+        }
+    }
 }
 
 /**
- * Main Initialization Function
- * bootstraps all sub-modules safely.
+ * ==========================================
+ * UI MODULE: SLEEP CALCULATOR
+ * ==========================================
  */
-function initGate() {
-    console.log("🚀 Gate.js Initialized");
+class SleepModule {
+    constructor() {
+        this.dom = {
+            sleep: document.getElementById('id_sleep_time'),
+            wake: document.getElementById('id_wake_up_time'),
+            nap: document.getElementById('id_nap_duration'),
+            display: document.getElementById('sleepDuration')
+        };
+        
+        if (this.dom.sleep && this.dom.wake) {
+            this.initListeners();
+            this.calculate();
+        }
+    }
 
-    // Initialize Sub-Modules
-    initSleepCalculator();
-    initEmojiPicker();
-    initScoreBar();
-    initAutoSave();
-    initDynamicHighlights();
-}
+    initListeners() {
+        this.dom.sleep.addEventListener('change', () => this.calculate());
+        this.dom.wake.addEventListener('change', () => this.calculate());
+        if (this.dom.nap) this.dom.nap.addEventListener('input', () => this.calculate());
+    }
 
-
-// ==========================================
-// 2. SHARED UTILITIES
-// ==========================================
-
-/**
- * Debounce helper to limit how often a function runs (e.g., for auto-save).
- * @param {Function} func - The function to debounce
- * @param {number} wait - Time in ms to wait before running
- */
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-/**
- * Safe wrapper to retrieve CSRF token from cookies.
- */
-function getCookie(name) {
-    if (!document.cookie) return null;
-    const xsrfCookies = document.cookie.split(';')
-        .map(c => c.trim())
-        .filter(c => c.startsWith(name + '='));
-
-    if (xsrfCookies.length === 0) return null;
-    return decodeURIComponent(xsrfCookies[0].substring(name.length + 1));
-}
-
-
-// ==========================================
-// 3. SLEEP CALCULATOR MODULE
-// ==========================================
-function initSleepCalculator() {
-    const sleepInput = document.getElementById('id_sleep_time');
-    const wakeInput = document.getElementById('id_wake_up_time');
-    const napInput = document.getElementById('id_nap_duration');
-    const durationDisplay = document.getElementById('sleepDuration');
-
-    // Exit if elements are missing
-    if (!sleepInput || !wakeInput || !durationDisplay) return;
-
-    function calculateDuration() {
-        if (!sleepInput.value || !wakeInput.value) {
-            durationDisplay.value = "--";
+    calculate() {
+        if (!this.dom.sleep.value || !this.dom.wake.value) {
+            this.dom.display.value = "--";
             return;
         }
 
-        // Parse Times (HH:MM)
-        const [sleepH, sleepM] = sleepInput.value.split(':').map(Number);
-        const [wakeH, wakeM] = wakeInput.value.split(':').map(Number);
+        const [sH, sM] = this.dom.sleep.value.split(':').map(Number);
+        const [wH, wM] = this.dom.wake.value.split(':').map(Number);
 
-        const sleepTotalMins = (sleepH * 60) + sleepM;
-        const wakeTotalMins = (wakeH * 60) + wakeM;
-
-        // Calculate Difference (handle crossing midnight)
-        let diffMins = wakeTotalMins - sleepTotalMins;
+        let diffMins = ((wH * 60) + wM) - ((sH * 60) + sM);
         if (diffMins < 0) diffMins += (24 * 60);
 
-        // Add Nap Time
-        const napHours = napInput ? (parseFloat(napInput.value) || 0) : 0;
+        const napHours = this.dom.nap ? (parseFloat(this.dom.nap.value) || 0) : 0;
         diffMins += (napHours * 60);
 
-        // Format Output
-        const finalHours = Math.floor(diffMins / 60);
-        const finalMinutes = Math.round(diffMins % 60);
-
-        durationDisplay.value = `${finalHours} hr ${finalMinutes} min`;
+        const hours = Math.floor(diffMins / 60);
+        const minutes = Math.round(diffMins % 60);
+        this.dom.display.value = `${hours} hr ${minutes} min`;
     }
-
-    // Attach Listeners
-    sleepInput.addEventListener('change', calculateDuration);
-    wakeInput.addEventListener('change', calculateDuration);
-    if (napInput) napInput.addEventListener('input', calculateDuration);
-
-    // Initial calculation on load
-    calculateDuration();
-}
-
-
-// ==========================================
-// 4. EMOJI PICKER MODULE
-// ==========================================
-function initEmojiPicker() {
-    const elements = {
-        input: document.getElementById('mood-picker-input'),
-        slot: document.getElementById('mood-slot-container'),
-        popover: document.getElementById('emoji-popover'),
-        picker: document.querySelector('emoji-picker')
-    };
-
-    // Safety Check: Ensure all parts of the picker exist
-    if (!elements.input || !elements.slot || !elements.popover || !elements.picker) {
-        return; 
-    }
-
-    // Set Data Source (Local JSON for speed)
-    elements.picker.dataSource = '/static/vendor/emoji-picker/data.json';
-
-    // 1. Toggle Popover on Slot Click
-    elements.slot.addEventListener('click', (e) => {
-        // Prevent closing if clicking *inside* the popover itself (while it's open)
-        if (elements.popover.contains(e.target)) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        const isVisible = elements.popover.style.display === 'block';
-        elements.popover.style.display = isVisible ? 'none' : 'block';
-    });
-
-    // 2. Handle Emoji Selection
-    elements.picker.addEventListener('emoji-click', (event) => {
-        // Update hidden input
-        elements.input.value = event.detail.unicode;
-        
-        // Hide popover
-        elements.popover.style.display = 'none';
-
-        // Trigger updates
-        triggerAutoSave(); // Save new mood immediately
-        updateMoodVisuals(); // Update glow effect
-    });
-
-    // 3. Close when clicking outside
-    document.addEventListener('click', (e) => {
-        const isClickInside = elements.slot.contains(e.target) || elements.popover.contains(e.target);
-        if (!isClickInside) {
-            elements.popover.style.display = 'none';
-        }
-    });
-
-    // Initial Visual Check
-    updateMoodVisuals();
 }
 
 /**
- * Updates the CSS class of the mood slot based on whether an emoji is selected.
- * Adds 'has-mood' class for glowing effects.
+ * ==========================================
+ * UI MODULE: DAILY LOG FORM
+ * Handles AutoSave, Emoji Picking, and Dynamic Highlights
+ * ==========================================
  */
-function updateMoodVisuals() {
-    const input = document.getElementById('mood-picker-input');
-    const slot = document.getElementById('mood-slot-container');
-    
-    if (input && slot) {
-        if (input.value) slot.classList.add('has-mood');
-        else slot.classList.remove('has-mood');
+class DailyLogForm {
+    constructor(formId) {
+        this.form = document.getElementById(formId);
+        this.statusIndicator = document.getElementById('save-status');
+        
+        if (!this.form) return;
+
+        this.debouncedSave = this.debounce(this.performSave.bind(this), 1000);
+        this.initAutoSave();
+        this.initEmojiPicker();
+        this.initScoreBar();
+        this.initDynamicRows();
     }
-}
 
+    debounce(func, wait) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
 
-// ==========================================
-// 5. SCORE BAR MODULE (Energy Meter)
-// ==========================================
-function initScoreBar() {
-    const container = document.getElementById('score-container');
-    if (!container) return;
+    // --- Auto Save Logic ---
+    initAutoSave() {
+        // Text Inputs: Debounce
+        this.form.addEventListener('input', (e) => {
+            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) this.debouncedSave();
+        });
 
-    function renderVisuals() {
-        const checkedInput = container.querySelector('input[type="radio"]:checked');
-        const currentVal = checkedInput ? parseInt(checkedInput.value) : 0;
-        const labels = container.querySelectorAll('.score-label');
-
-        labels.forEach(label => {
-            const labelVal = parseInt(label.getAttribute('data-value'));
-            // Highlight all bars up to the selected value
-            if (labelVal <= currentVal) {
-                label.classList.add('is-active');
-            } else {
-                label.classList.remove('is-active');
+        // Choices: Immediate
+        this.form.addEventListener('change', (e) => {
+            if (['radio', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT' || e.target.type === 'time') {
+                this.performSave();
             }
         });
     }
 
-    // Init & Listener
-    renderVisuals();
-    container.addEventListener('change', renderVisuals);
-}
-
-
-// ==========================================
-// 6. AUTO-SAVE MODULE
-// ==========================================
-
-// Expose trigger globally so other modules (like Emoji) can call it
-var triggerAutoSave = () => {}; 
-
-function initAutoSave() {
-    const form = document.getElementById('dayPageForm');
-    const statusIndicator = document.getElementById('save-status');
-
-    if (!form) return;
-
-    /**
-     * Performs the actual AJAX save
-     */
-    function saveData() {
-        // UI: Saving...
-        if (statusIndicator) {
-            statusIndicator.textContent = "Saving...";
-            statusIndicator.className = "small fw-bold text-uppercase text-secondary";
-        }
-
-        const formData = new FormData(form);
-        const url = form.dataset.autosaveUrl || "/gate/autosave/";
-        
-        // Fetch CSRF Token safely
-        const csrfInput = form.querySelector('[name=csrfmiddlewaretoken]');
-        const csrfToken = csrfInput ? csrfInput.value : "";
-
-        fetch(url, {
-            method: "POST",
-            headers: { "X-CSRFToken": csrfToken },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
+    async performSave() {
+        this.updateStatus("Saving...", "text-secondary");
+        try {
+            const data = await GateAPI.autoSave(this.form);
             if (data.status === 'success') {
-                // UI: Saved
-                if (statusIndicator) {
-                    statusIndicator.textContent = "Saved";
-                    statusIndicator.className = "small fw-bold text-uppercase text-success";
-                    setTimeout(() => {
-                        if (statusIndicator.textContent === "Saved") statusIndicator.textContent = "";
-                    }, 2000);
-                }
+                this.updateStatus("Saved", "text-success");
+                setTimeout(() => this.updateStatus("", ""), 2000);
             } else {
-                console.error("Auto-Save Error:", data.errors);
-                if (statusIndicator) {
-                    statusIndicator.textContent = "Error";
-                    statusIndicator.className = "small fw-bold text-uppercase text-danger";
-                }
+                this.updateStatus("Error", "text-danger");
             }
-        })
-        .catch(err => {
-            console.error("Auto-Save Network Error:", err);
-            if (statusIndicator) statusIndicator.textContent = "Offline";
+        } catch {
+            this.updateStatus("Offline", "text-danger");
+        }
+    }
+
+    updateStatus(text, colorClass) {
+        if (!this.statusIndicator) return;
+        this.statusIndicator.textContent = text;
+        this.statusIndicator.className = `small fw-bold text-uppercase ${colorClass}`;
+    }
+
+    // --- Emoji Picker ---
+    initEmojiPicker() {
+        const input = document.getElementById('mood-picker-input');
+        const slot = document.getElementById('mood-slot-container');
+        const popover = document.getElementById('emoji-popover');
+        const picker = document.querySelector('emoji-picker');
+
+        if (!input || !slot || !popover || !picker) return;
+
+        picker.dataSource = '/static/vendor/emoji-picker/data.json';
+
+        slot.addEventListener('click', (e) => {
+            if (popover.contains(e.target)) return;
+            e.preventDefault();
+            popover.style.display = popover.style.display === 'block' ? 'none' : 'block';
+        });
+
+        picker.addEventListener('emoji-click', (e) => {
+            input.value = e.detail.unicode;
+            popover.style.display = 'none';
+            slot.classList.add('has-mood');
+            this.performSave(); // Immediate save
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!slot.contains(e.target) && !popover.contains(e.target)) {
+                popover.style.display = 'none';
+            }
+        });
+
+        if (input.value) slot.classList.add('has-mood');
+    }
+
+    // --- Score Bar ---
+    initScoreBar() {
+        const container = document.getElementById('score-container');
+        if (!container) return;
+
+        const updateVisuals = () => {
+            const val = parseInt(container.querySelector('input:checked')?.value || 0);
+            container.querySelectorAll('.score-label').forEach(lbl => {
+                const lvl = parseInt(lbl.getAttribute('data-value'));
+                lbl.classList.toggle('is-active', lvl <= val);
+            });
+        };
+        
+        container.addEventListener('change', updateVisuals);
+        updateVisuals();
+    }
+
+    // --- Dynamic Highlights (Add/Delete Rows) ---
+    initDynamicRows() {
+        this.form.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('[data-add-row]');
+            if (addBtn) this.addFormRow(addBtn.dataset.prefix);
+
+            const delBtn = e.target.closest('.btn-delete-row');
+            if (delBtn) {
+                const row = delBtn.closest('.highlight-row');
+                row.querySelector('input[name$="-DELETE"]').checked = true;
+                row.style.display = 'none';
+                this.performSave();
+            }
         });
     }
 
-    // Create Debounced Version (Wait 1s after typing stops)
-    const debouncedSave = debounce(saveData, 1000);
-    
-    // Assign to global trigger (for immediate saves like Radio buttons)
-    triggerAutoSave = saveData;
-
-    // Attach Listeners
-    // 1. Text Inputs: Debounce to prevent spamming
-    form.addEventListener('input', (e) => {
-        if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-            debouncedSave();
-        }
-    });
-
-    // 2. Choice Inputs: Save Immediately
-    form.addEventListener('change', (e) => {
-        if (e.target.type === 'radio' || e.target.tagName === 'SELECT' || e.target.type === 'time') {
-            saveData();
-        }
-    });
-}
-
-
-// ==========================================
-// 7. GLOBAL UTILITIES (External Access)
-// ==========================================
-
-// Used by the Routine Checkboxes in the Sidebar
-window.toggleTask = function(itemId) {
-    const url = `/routine/toggle/${itemId}/`;
-    const csrftoken = getCookie('csrftoken');
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/json'
-        },
-    })
-    .then(res => res.json())
-    .then(data => console.log(`Routine Item ${data.item_id}: ${data.status}`))
-    .catch(error => {
-        console.error('Routine Toggle Error:', error);
-        // Revert checkbox visual on failure
-        const checkbox = document.getElementById(`item${itemId}`);
-        if (checkbox) checkbox.checked = !checkbox.checked;
-    });
-};
-
-
-// ==========================================
-// 8. DYNAMIC HIGHLIGHTS MODULE
-// ==========================================
-function initDynamicHighlights() {
-    const form = document.getElementById('dayPageForm');
-    if (!form) return;
-
-    form.addEventListener('click', (e) => {
-        // 1. Handle ADD Button
-        const addBtn = e.target.closest('[data-add-row]');
-        if (addBtn) {
-            const prefix = addBtn.dataset.prefix;
-            addFormRow(prefix);
-            return;
-        }
-
-        // 2. Handle DELETE Button
-        const delBtn = e.target.closest('.btn-delete-row');
-        if (delBtn) {
-            const row = delBtn.closest('.highlight-row');
-            if (row) {
-                // Find the hidden django DELETE checkbox
-                const deleteInput = row.querySelector('input[name$="-DELETE"]');
-                if (deleteInput) {
-                    deleteInput.checked = true;
-                    // Visually hide the row
-                    row.style.display = 'none'; 
-                    // Save changes to DB immediately
-                    triggerAutoSave();
-                }
-            }
-        }
-    });
-
-    // Helper function to render the new row
-    function addFormRow(prefix) {
-        // ... (this function remains exactly the same as before) ...
+    addFormRow(prefix) {
         const container = document.getElementById(`${prefix}-container`);
-        const totalFormsInput = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
-        const emptyFormTemplate = document.getElementById(`${prefix}-empty-form`);
+        const totalInput = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
+        const template = document.getElementById(`${prefix}-empty-form`);
 
-        if (!container || !totalFormsInput || !emptyFormTemplate) return;
+        if (!container || !totalInput || !template) return;
 
-        const currentCount = parseInt(totalFormsInput.value);
-        const newRowHtml = emptyFormTemplate.innerHTML.replace(/__prefix__/g, currentCount);
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = newRowHtml;
-
-        while (tempDiv.firstChild) {
-            container.appendChild(tempDiv.firstChild);
-        }
-
-        totalFormsInput.value = currentCount + 1;
+        const count = parseInt(totalInput.value);
+        const newHtml = template.innerHTML.replace(/__prefix__/g, count);
+        container.insertAdjacentHTML('beforeend', newHtml);
+        totalInput.value = count + 1;
         
-        const newInputs = container.querySelectorAll('input[type="text"]');
-        if (newInputs.length > 0) {
-            newInputs[newInputs.length - 1].focus();
-        }
+        const inputs = container.querySelectorAll('input[type="text"]');
+        if (inputs.length) inputs[inputs.length - 1].focus();
     }
 }
+
+/**
+ * ==========================================
+ * BOOTSTRAPPER
+ * ==========================================
+ */
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.HAS_GATE_JS_LOADED) return;
+    window.HAS_GATE_JS_LOADED = true;
+
+    console.log("🚀 Gate.js Initialized (Refactored)");
+
+    new SleepModule();
+    new DailyLogForm('dayPageForm');
+
+    // Global helper for the Sidebar Routines
+    window.toggleTask = async function(itemId) {
+        try {
+            const data = await GateAPI.toggleRoutine(itemId);
+            console.log(`Routine ${data.item_id}: ${data.status}`);
+        } catch {
+            // Revert checkbox on failure
+            const cb = document.getElementById(`item${itemId}`);
+            if (cb) cb.checked = !cb.checked;
+        }
+    };
+});

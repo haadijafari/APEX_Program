@@ -1,218 +1,228 @@
+/* backend/static/js/index.js */
+
 /**
- * backend/static/js/index.js
- * Handles charts and habit toggling for the gate index page.
+ * ==========================================
+ * INDEX API LAYER
+ * ==========================================
  */
-
-(function() {
-    // Expose chart variable globally so it is accessible to toggleHabit reliably
-    window.apexHabitChart = null;
-
-    /**
-     * Toggle Habit Status
-     * This function is called globally by the onclick attributes in the HTML table.
-     */
-    window.toggleHabit = function(habitId, dateStr, cellElement, dayIndex) {
-        const config = window.apexPageData;
-        if (!config) {
-            console.error("Apex page data is missing. Ensure the config script is loaded.");
-            return;
-        }
-
+class IndexAPI {
+    static async toggleHabit(habitId, dateStr, csrfToken) {
         const url = `/habit/toggle/${habitId}/${dateStr}/`;
-        
-        fetch(url, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': config.csrfToken,
+                'X-CSRFToken': csrfToken,
                 'Content-Type': 'application/json'
             },
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            // 1. Update Grid Icon using Backend HTML
-            const iconSpan = cellElement.querySelector('.status-icon');
-            if (data.icon_html && iconSpan) {
-                iconSpan.innerHTML = data.icon_html;
-            }
-
-            // 2. Update Bar Chart
-            if (window.apexHabitChart && typeof dayIndex !== 'undefined') {
-                // Update the specific bar's data
-                window.apexHabitChart.data.datasets[0].data[dayIndex] = data.daily_count;
-
-                // Update the tooltip titles for this day in the global config
-                if (data.daily_titles) {
-                    config.habitTitlesData[dayIndex] = data.daily_titles;
-                }
-
-                window.apexHabitChart.update();
-            } else {
-                console.warn("Habit chart not found or dayIndex is missing. Chart update skipped.");
-            }
-
-            // 3. Update Player Card ===
-            const elLevel = document.getElementById('player-level');
-            const elXPText = document.getElementById('player-xp-text');
-            const elXPBar = document.getElementById('player-xp-bar');
-
-            if (elLevel) elLevel.textContent = data.new_level;
-            if (elXPText) elXPText.textContent = `${data.new_xp_current} / ${data.new_xp_required}`;
-            if (elXPBar) elXPBar.style.width = `${data.new_xp_percent}%`;
-
-            // === 4. Update Stats Radar Chart ===
-            if (window.apexStatsChart) {
-                // Update the data array
-                window.apexStatsChart.data.datasets[0].data = data.new_stats;
-                
-                // Optional: Dynamic Scaling (if stats grew, increase the chart scale)
-                const newMax = Math.max(...data.new_stats);
-                window.apexStatsChart.options.scales.r.suggestedMax = newMax + 1;
-                
-                window.apexStatsChart.update();
-            }
-        })
-        .catch(error => {
-            console.error('Error toggling habit:', error);
         });
-    };
+        if (!response.ok) throw new Error('Network response was not ok');
+        return await response.json();
+    }
+}
 
-    // --- Chart Initialization ---
-    document.addEventListener('DOMContentLoaded', function() {
-        const config = window.apexPageData;
-        if (!config) return;
-
-        // 1. Render Existing Radar
-        // Ensure renderStatsChart is available (loaded from stats.js)
-        if (typeof renderStatsChart === 'function') {
-            renderStatsChart(config.statLabels, config.statValues);
-        }
-
-        const styles = getComputedStyle(document.documentElement);
-        const primaryColor = styles.getPropertyValue('--apex-primary').trim() || '#0d6efd';
-        const primaryRgb = styles.getPropertyValue('--apex-primary-rgb').trim() || '13, 110, 253';
+/**
+ * ==========================================
+ * CHART MANAGER
+ * Wraps Chart.js logic to keep the main view clean.
+ * ==========================================
+ */
+class DashboardCharts {
+    constructor(config) {
+        this.config = config;
+        this.charts = {
+            stats: null,
+            sleep: null,
+            habits: null
+        };
+        this.styles = getComputedStyle(document.documentElement);
+        this.primaryColor = this.styles.getPropertyValue('--apex-primary').trim() || '#0d6efd';
         
-        // 2. Render Sleep Chart
-        const sleepChartCanvas = document.getElementById('sleepChart');
-        if (sleepChartCanvas) {
-            new Chart(sleepChartCanvas, {
-                type: 'line',
-                data: {
-                    labels: config.monthDays,
-                    datasets: [{
-                        label: 'Sleep Duration (hrs)',
-                        data: config.sleepData,
-                        borderColor: primaryColor,
-                        backgroundColor: `rgba(${primaryRgb}, 0.1)`,
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 2,
-                        pointHoverRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: '#333' },
-                            suggestedMax: 10
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: {
-                                autoSkip: false, // Forces all labels (days) to show
-                                maxRotation: 0   // Prevents tilting
-                            }
-                        }
-                    },
-                    plugins: { legend: { display: false } } 
-                }
-            });
-        }
+        this.initStatsChart();
+        this.initSleepChart();
+        this.initHabitChart();
+    }
 
-        // 3. Render Habit Count Chart (Assigned to Global Window Object)
-        const habitChartCanvas = document.getElementById('habitCountChart');
-        if (habitChartCanvas) {
-            window.apexHabitChart = new Chart(habitChartCanvas, {
-                type: 'bar',
-                data: {
-                    labels: config.monthDays,
-                    datasets: [{
-                        label: 'Habits Completed',
-                        data: config.habitCountsData,
-                        backgroundColor: primaryColor,
-                        borderRadius: 2,
-                        barPercentage: 0.6
-                    }]
+    initStatsChart() {
+        // Relies on global renderStatsChart from stats.js
+        if (typeof renderStatsChart === 'function') {
+            this.charts.stats = renderStatsChart(this.config.statLabels, this.config.statValues);
+            // Store reference globally if needed by stats.js, or capture the return
+            window.apexStatsChart = this.charts.stats; 
+        }
+    }
+
+    initSleepChart() {
+        const ctx = document.getElementById('sleepChart');
+        if (!ctx) return;
+
+        this.charts.sleep = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: this.config.monthDays,
+                datasets: [{
+                    label: 'Sleep Duration (hrs)',
+                    data: this.config.sleepData,
+                    borderColor: this.primaryColor,
+                    backgroundColor: `rgba(${this.styles.getPropertyValue('--apex-primary-rgb')}, 0.1)`,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#333' } },
+                    x: { grid: { display: false } }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            grid: { color: '#333' },
-                            ticks: { stepSize: 1 },
-                            max: config.totalActiveHabits,
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: {
-                                autoSkip: false,
-                                maxRotation: 0
-                            }
-                        }
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    initHabitChart() {
+        const ctx = document.getElementById('habitCountChart');
+        if (!ctx) return;
+
+        this.charts.habits = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: this.config.monthDays,
+                datasets: [{
+                    label: 'Habits Completed',
+                    data: this.config.habitCountsData,
+                    backgroundColor: this.primaryColor,
+                    borderRadius: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { color: '#333' },
+                        max: this.config.totalActiveHabits
                     },
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const titles = config.habitTitlesData[context.dataIndex];
-                                    if (titles && titles.length > 0) {
-                                        return titles;
-                                    }
-                                    return [];
-                                }
+                    x: { grid: { display: false } }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: (context) => {
+                                const titles = this.config.habitTitlesData[context.dataIndex];
+                                return titles && titles.length ? titles : [];
                             }
                         }
                     }
                 }
-            });
-        }
+            }
+        });
+    }
 
-        // 4. Habit Tracker Crosshair Effect
+    updateStats(newValues) {
+        if (!this.charts.stats) return;
+        this.charts.stats.data.datasets[0].data = newValues;
+        const newMax = Math.max(...newValues);
+        this.charts.stats.options.scales.r.suggestedMax = newMax + 1;
+        this.charts.stats.update();
+    }
+
+    updateHabitBar(dayIndex, newCount, newTitles) {
+        if (!this.charts.habits) return;
+        this.charts.habits.data.datasets[0].data[dayIndex] = newCount;
+        if (newTitles) {
+            this.config.habitTitlesData[dayIndex] = newTitles;
+        }
+        this.charts.habits.update();
+    }
+}
+
+/**
+ * ==========================================
+ * HABIT GRID MANAGER
+ * Handles interactions on the big calendar table.
+ * ==========================================
+ */
+class HabitGrid {
+    constructor(chartManager) {
+        this.chartManager = chartManager;
+        this.config = window.apexPageData;
+        
+        this.initCrosshair();
+        
+        // Bind the global toggle function expected by the HTML onclicks
+        window.toggleHabit = this.handleToggle.bind(this);
+    }
+
+    async handleToggle(habitId, dateStr, cellElement, dayIndex) {
+        if (!this.config) return;
+
+        try {
+            const data = await IndexAPI.toggleHabit(habitId, dateStr, this.config.csrfToken);
+
+            // 1. Update Cell UI
+            const iconSpan = cellElement.querySelector('.status-icon');
+            if (iconSpan && data.icon_html) iconSpan.innerHTML = data.icon_html;
+
+            // 2. Update Charts
+            if (typeof dayIndex !== 'undefined') {
+                this.chartManager.updateHabitBar(dayIndex, data.daily_count, data.daily_titles);
+            }
+            this.chartManager.updateStats(data.new_stats);
+
+            // 3. Update Player Card
+            this.updatePlayerCard(data);
+
+        } catch (error) {
+            console.error("Habit Toggle Failed:", error);
+        }
+    }
+
+    updatePlayerCard(data) {
+        const els = {
+            level: document.getElementById('player-level'),
+            xpText: document.getElementById('player-xp-text'),
+            xpBar: document.getElementById('player-xp-bar')
+        };
+
+        if (els.level) els.level.textContent = data.new_level;
+        if (els.xpText) els.xpText.textContent = `${data.new_xp_current} / ${data.new_xp_required}`;
+        if (els.xpBar) els.xpBar.style.width = `${data.new_xp_percent}%`;
+    }
+
+    initCrosshair() {
         const table = document.querySelector('.habit-tracker-table');
-        if (table) {
-            table.addEventListener('mouseover', function(e) {
-                const cell = e.target.closest('td');
-                if (!cell) return;
+        if (!table) return;
 
-                // Clear previous highlights
-                table.querySelectorAll('.habit-crosshair-active').forEach(el => el.classList.remove('habit-crosshair-active'));
+        table.addEventListener('mouseover', (e) => {
+            const cell = e.target.closest('td');
+            if (!cell || cell.cellIndex === 0) return;
 
-                const colIndex = cell.cellIndex;
-                // Skip Habit Title column (index 0)
-                if (colIndex === 0) return;
+            // Cleanup old
+            table.querySelectorAll('.habit-crosshair-active').forEach(el => el.classList.remove('habit-crosshair-active'));
 
-                // Highlight Row
-                const row = cell.parentElement;
-                row.querySelectorAll('td').forEach(td => td.classList.add('habit-crosshair-active'));
+            // Highlight Row & Col
+            cell.parentElement.querySelectorAll('td').forEach(td => td.classList.add('habit-crosshair-active'));
+            const colIdx = cell.cellIndex + 1;
+            table.querySelectorAll(`td:nth-child(${colIdx}), th:nth-child(${colIdx})`)
+                 .forEach(el => el.classList.add('habit-crosshair-active'));
+        });
 
-                // Highlight Column
-                const colSelector = `td:nth-child(${colIndex + 1}), th:nth-child(${colIndex + 1})`;
-                table.querySelectorAll(colSelector).forEach(el => el.classList.add('habit-crosshair-active'));
-            });
+        table.addEventListener('mouseleave', () => {
+            table.querySelectorAll('.habit-crosshair-active').forEach(el => el.classList.remove('habit-crosshair-active'));
+        });
+    }
+}
 
-            table.addEventListener('mouseleave', function() {
-                table.querySelectorAll('.habit-crosshair-active').forEach(el => el.classList.remove('habit-crosshair-active'));
-            });
-        }
-    });
+// Initialize on Load
+document.addEventListener('DOMContentLoaded', () => {
+    if (!window.apexPageData) return;
+    
+    console.log("🚀 Index.js Initialized (Refactored)");
 
-})();
+    const dashboardCharts = new DashboardCharts(window.apexPageData);
+    new HabitGrid(dashboardCharts);
+});
