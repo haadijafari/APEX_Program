@@ -1,19 +1,23 @@
 from .base import *
 
 ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    '*',
+    "127.0.0.1",
+    "localhost",
+    "*",
 ]
 
 INTERNAL_IPS = [
-    '127.0.0.1',
-    'localhost',
+    "127.0.0.1",
+    "localhost",
 ]
 
+# Force WhiteNoise to handle static files in Dev (for ETags support)
+# This app must be added BEFORE 'django.contrib.staticfiles' to work.
+INSTALLED_APPS = ["whitenoise.runserver_nostatic"] + INSTALLED_APPS
+
 INSTALLED_APPS += [
-    'debug_toolbar',
-    'django_extensions',
+    "debug_toolbar",
+    "django_extensions",
 ]
 
 MIDDLEWARE += [
@@ -21,20 +25,20 @@ MIDDLEWARE += [
 ]
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = '/static/'
-MEDIA_URL = '/media/'
+STATIC_URL = "/static/"
+MEDIA_URL = "/media/"
 
 # (Django will create this folder automatically when you run collectstatic)
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-MEDIA_ROOT = BASE_DIR / 'media'
+STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_ROOT = BASE_DIR / "media"
 
 STATICFILES_DIRS = [
     # BASE_DIR / "apps/frontend/next/src",
-    BASE_DIR / 'static',
+    BASE_DIR / "static",
 ]
 
 # reCaptcha
-SILENCED_SYSTEM_CHECKS = ['captcha.recaptcha_test_key_error']
+SILENCED_SYSTEM_CHECKS = ["captcha.recaptcha_test_key_error"]
 
 # Cros Origin Settings
 CORS_ALLOWED_ORIGINS = [
