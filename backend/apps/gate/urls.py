@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.gate import views
+from apps.gate.views import assets
 
 app_name = "gate"
 
@@ -18,4 +19,5 @@ urlpatterns = [
         views.toggle_task_log,
         name="toggle_routine_log",
     ),
+    path("assets/emoji-data.json", assets.emoji_data_view, name="emoji_data"),
 ]

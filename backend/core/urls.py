@@ -23,5 +23,10 @@ urlpatterns = [
 if DEBUG:
     urlpatterns += debug_toolbar_urls()
 
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # WhiteNoise handles this now (enabled via runserver_nostatic in dev.py).
+    # urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# # [FIX] Keep serving Media files manually in dev (WhiteNoise doesn't handle these)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

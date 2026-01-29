@@ -181,7 +181,7 @@ class DailyLogForm {
 
         if (!input || !slot || !popover || !picker) return;
 
-        picker.dataSource = '/static/vendor/emoji-picker/data.json';
+        picker.dataSource = '/assets/emoji-data.json';
 
         slot.addEventListener('click', (e) => {
             if (popover.contains(e.target)) return;
