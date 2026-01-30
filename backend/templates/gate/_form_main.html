@@ -1,5 +1,7 @@
 <form method="post" id="dayPageForm" onsubmit="return false;" data-autosave-url="{% url 'gate:autosave_daily_entry' %}">
     {% csrf_token %}
+
+    <input type="hidden" name="date" value="{{ today|date:'Y-m-d' }}">
     
     <style>
         #dayPageForm button[type="submit"],

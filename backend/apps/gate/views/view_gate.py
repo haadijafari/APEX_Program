@@ -1,29 +1,48 @@
+import jdatetime
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from apps.gate.services import gate as gate_service
 
 
 @login_required
-def gate_view(request):
+def gate_view(request, date_str=None):
     """
     The 'Gate'.
     Where the Hunter enters to complete daily missions.
     Handles the DailyEntry form and Routine display.
     """
-    # 1. Date & Entry Setup
-    today, jalali_date_str = gate_service.get_date_context()
-    daily_entry = gate_service.get_or_create_daily_entry(request.user, today)
+    if date_str:
+        try:
+            # 1. Parse Jalali Date from URL (e.g. "1403-11-10")
+            j_year, j_month, j_day = map(int, date_str.split("-"))
+            j_date = jdatetime.date(j_year, j_month, j_day)
 
-    # 2. Forms & Data
+            # 2. Convert to Gregorian for System Logic
+            target_date = j_date.togregorian()
+
+            # 3. Format Display String
+            jalali_date_str = j_date.strftime("%A %d %B %Y")
+        except (ValueError, TypeError):
+            # Fallback to today if date is invalid
+            return HttpResponseRedirect(reverse("gate:gate"))
+    else:
+        # Default: Use Today
+        target_date, jalali_date_str = gate_service.get_date_context()
+
+    # Get or Create the Entry for the TARGET date (not necessarily today)
+    daily_entry = gate_service.get_or_create_daily_entry(request.user, target_date)
+
+    # Forms & Data
     forms_context = gate_service.initialize_forms(daily_entry)
-    tasks_context = gate_service.get_tasks_context(request.user, today)
+    tasks_context = gate_service.get_tasks_context(request.user, target_date)
 
     context = {
         "daily_entry": daily_entry,
-        "today": today,
+        "today": target_date,
         "jalali_date_str": jalali_date_str,
         **forms_context,
         **tasks_context,

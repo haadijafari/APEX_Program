@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import jdatetime
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
@@ -96,8 +98,17 @@ def process_autosave(user, post_data):
     Handles validation and saving of the DailyEntry and its Highlights.
     Returns a dict with status and optional errors.
     """
-    today = timezone.now().date()
-    daily_entry = get_or_create_daily_entry(user, today)
+    # Date Handling: Default to today if not provided
+    target_date = timezone.now().date()
+    if date_str := post_data.get("date"):
+        try:
+            # Parse "2025-01-30" -> date object
+            target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass  # Keep default (today) if parse fails
+
+    # Fetch or Create the DailyEntry for the target date
+    daily_entry = get_or_create_daily_entry(user, target_date)
 
     # Use helper to init forms with POST data
     forms = initialize_forms(daily_entry, post_data)

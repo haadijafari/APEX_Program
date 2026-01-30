@@ -1,7 +1,6 @@
 <div class="card h-100 border-secondary shadow-sm">
     <div class="card-header border-secondary bg-transparent d-flex justify-content-between align-items-center">
         <span class="text-secondary text-uppercase small ls-1">System Log</span>
-        
         <span class="fw-bold text-system">{{ current_month_str }}</span> 
     </div>
     <div class="card-body">
@@ -20,20 +19,22 @@
             {% for day_info in calendar_days %}
                 <div style="width: 14.28%; height: 50px; padding: 2px;">
                     {% if day_info %}
-                        <div class="h-100 rounded d-flex flex-column justify-content-center align-items-center position-relative
-                            {% if day_info.has_log %}
-                                bg-success text-white
-                            {% elif day_info.is_today %}
-                                bg-warning text-dark
-                            {% elif day_info.is_past %}
-                                bg-danger text-white
-                            {% else %}
-                                text-secondary
-                            {% endif %}"
-                        >
-                            <span class="small fw-bold">{{ day_info.day }}</span>
-                            
-                        </div>
+                        <a href="{% url 'gate:gate_date' day_info.full_date %}" class="text-decoration-none d-block h-100">
+                            <div class="h-100 rounded d-flex flex-column justify-content-center align-items-center position-relative transition-all
+                                {% if day_info.has_log %}
+                                    bg-success text-white
+                                {% elif day_info.is_today %}
+                                    bg-warning text-dark
+                                {% elif day_info.is_past %}
+                                    bg-danger text-white
+                                {% else %}
+                                    bg-dark text-secondary border border-secondary
+                                {% endif %}"
+                                style="cursor: pointer;"
+                            >
+                                <span class="small fw-bold">{{ day_info.day }}</span>
+                            </div>
+                        </a>
                     {% else %}
                         <div class="h-100"></div>
                     {% endif %}
