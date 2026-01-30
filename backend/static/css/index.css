@@ -1,4 +1,11 @@
-/* Dynamic Crosshair Highlight for Habit Table */
+/* ==========================================================================
+   FILE: index.css
+   DESCRIPTION: Styles specific to the Dashboard/Index page.
+   ========================================================================== */
+
+/* 1. HABIT TRACKER INTERACTION
+   Visual cue for row/column highlighting when hovering over the calendar table.
+   Uses the primary system color with transparency. */
 .habit-crosshair-active {
     background-color: rgba(var(--apex-primary-rgb), 0.25) !important;
     transition: background-color 0.1s ease;

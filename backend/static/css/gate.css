@@ -1,4 +1,11 @@
-/* backend/static/css/gate.css */
+/* ==========================================================================
+   FILE: gate.css
+   DESCRIPTION: Styles for the 'Gate' daily entry interface.
+   SECTIONS:
+     1. Score System (Energy Bar)
+     2. Mood Slot (Inventory Box)
+     3. Emoji Picker (Popover)
+   ========================================================================== */
 
 /* =========================================
    1. SCORE SYSTEM (The "Energy Bar")
@@ -6,17 +13,18 @@
 
 .system-score-container {
     display: flex;
-    gap: 2px; /* Tight spacing for a bar look */
+    gap: 2px; /* Tight spacing creates the 'bar' visual */
     width: 100%;
     background: #111;
     padding: 4px;
     border-radius: 8px;
     border: 1px solid #333;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
 }
 
-/* NUCLEAR OPTION: Force hide the default radio buttons */
-/* Target ANY radio button inside the container */
+/* HIDE DEFAULT RADIO BUTTONS
+   We hide the actual input elements and style the <label> instead.
+   Using !important to ensure no browser default styles leak through. */
 .system-score-container input[type="radio"] {
     display: none !important;
     opacity: 0 !important;
@@ -25,10 +33,11 @@
     width: 0;
     height: 0;
     margin: 0;
-    -webkit-appearance: none; /* Extra safety for Safari/Chrome */
+    -webkit-appearance: none;
     appearance: none;
 }
 
+/* Base style for a score segment */
 .score-label {
     flex: 1;
     text-align: center;
@@ -36,10 +45,10 @@
     
     background-color: #1a1a1a;
     border: 1px solid #2a2a2a;
-    color: #444; /* Dim text by default */
+    color: #444; /* Dim text indicates inactive state */
     
     cursor: pointer;
-    font-family: 'Segoe UI', monospace; /* Tech font */
+    font-family: 'Segoe UI', monospace; /* Monospace for 'Tech' feel */
     font-weight: 800;
     font-size: 1rem;
     border-radius: 2px;
@@ -49,13 +58,14 @@
     overflow: hidden;
 }
 
-/* Hovering over a specific box */
 .score-label:hover {
     background-color: #252525;
     color: #888;
     transform: translateY(-1px);
 }
 
+/* ACTIVE STATE: General High Score (8-10)
+   Default Blue/System color glow */
 .score-label.is-active {
     background: linear-gradient(180deg, rgba(13, 110, 253, 0.2) 0%, rgba(13, 110, 253, 0.1) 100%);
     border-color: var(--apex-primary, #0d6efd);
@@ -64,28 +74,27 @@
     text-shadow: 0 0 5px rgba(13, 110, 253, 0.8);
 }
 
-/* Optional: Color grading for low/med/high scores */
-/* Low (1-4) */
+/* LOW SCORE (1-4): Red Danger Warning */
 .score-label.is-active[data-value="1"],
 .score-label.is-active[data-value="2"],
 .score-label.is-active[data-value="3"],
 .score-label.is-active[data-value="4"] {
-    border-color: #dc3545; /* Red */
+    border-color: #dc3545;
     background: linear-gradient(180deg, rgba(220, 53, 69, 0.2) 0%, rgba(220, 53, 69, 0.1) 100%);
     box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
     text-shadow: 0 0 5px rgba(220, 53, 69, 0.8);
 }
-/* Med (5-7) */
+
+/* MEDIUM SCORE (5-7): Yellow Caution */
 .score-label.is-active[data-value="5"],
 .score-label.is-active[data-value="6"],
 .score-label.is-active[data-value="7"] {
-    border-color: #ffc107; /* Yellow */
+    border-color: #ffc107;
     color: #fff;
     background: linear-gradient(180deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
     box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
     text-shadow: 0 0 5px rgba(255, 193, 7, 0.8);
 }
-
 
 /* =========================================
    2. MOOD SLOT (The Inventory Box)
@@ -103,15 +112,15 @@
     align-items: center;
     justify-content: center;
     
-    /* Glass / HUD look */
+    /* HUD / Glass look */
     background-color: #111;
     border: 1px solid #333;
     border-radius: 8px;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
     
     cursor: pointer;
     position: relative;
-    min-height: 56px; /* Matches score bar */
+    min-height: 56px; /* Matches height of score bar */
     transition: all 0.3s ease;
 }
 
@@ -120,26 +129,28 @@
     background-color: #161616;
 }
 
-/* When a mood is actually selected (Input has value) */
+/* Selected State */
 .mood-slot.has-mood {
     border-color: var(--apex-primary, #0d6efd);
     box-shadow: 0 0 15px rgba(13, 110, 253, 0.2), inset 0 0 10px rgba(13, 110, 253, 0.1);
 }
 
+/* The actual emoji text input */
 .mood-input-styled {
     background: transparent !important;
     border: none !important;
     color: white !important;
     text-align: center;
-    font-size: 2.2rem; /* Larger Emoji */
+    font-size: 2.2rem; /* Large Emoji */
     width: 100%;
     height: 100%;
     cursor: pointer;
     padding: 0;
     outline: none !important;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.3)); /* Glowy Emoji */
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3)); /* Glow effect */
 }
 
+/* Tiny label in top-left corner ("MOOD") */
 .mood-label-text {
     position: absolute;
     top: 6px;
@@ -152,41 +163,37 @@
     font-weight: 700;
 }
 
-
 /* =========================================
-   3. EMOJI PICKER POPUP (Fixed)
+   3. EMOJI PICKER POPUP
    ========================================= */
 
 #emoji-popover {
-    /* Hidden by default (JS toggles this) */
-    display: none; 
+    display: none; /* Toggled via JS */
     
-    /* Position: anchors to the bottom of the mood-slot */
+    /* Anchoring */
     position: absolute; 
-    bottom: 100%; /* Pushes it exactly above the slot */
-    right: 0;     /* Aligns to the right edge */
-    margin-bottom: 10px; /* Small gap between box and popup */
+    bottom: 100%; /* Sits exactly on top of the slot */
+    right: 0;
+    margin-bottom: 10px;
     
-    /* Sizing constraints */
+    /* Dimensions */
     width: 320px;
     height: 400px;
     
-    /* Visuals - Solid background to fix transparency issue */
+    /* Visuals */
     background-color: #1a1a1a;
     border: 1px solid #444;
     border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     
-    /* Layering - Higher than everything else */
-    z-index: 9999;
-    overflow: hidden; /* Keeps rounded corners clean */
+    z-index: 9999; /* Ensure it floats above all other UI */
+    overflow: hidden;
 }
 
-/* Styling the Web Component Shadow DOM */
+/* Styling the 'emoji-picker-element' web component Shadow DOM variables */
 emoji-picker {
     width: 100%;
     height: 100%;
-    /* These variables are required by emoji-picker-element library */
     --background: #1a1a1a; 
     --border-color: #333;
     --input-border-color: #444;
@@ -194,10 +201,12 @@ emoji-picker {
     --category-font-color: #888;
 }
 
+/* =========================================
+   4. HELPERS
+   ========================================= */
 
-
-/* Delete Button */
+/* Table Delete Button (X) */
 .btn-delete-row:hover {
     opacity: 1 !important;
-    color: #ff0000 !important; /* Makes the X red on hover */
+    color: #ff0000 !important;
 }
