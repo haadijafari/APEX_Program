@@ -252,4 +252,7 @@ TINYMCE_DEFAULT_CONFIG = {
     # Dark Mode Settings
     "skin": "oxide-dark",
     "content_css": "dark",
+    # Spell checker
+    "browser_spellcheck": True,
+    "contextmenu": False,
 }
