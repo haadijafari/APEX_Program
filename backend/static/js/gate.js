@@ -88,22 +88,34 @@ class SleepModule {
     }
 
     calculate() {
-        if (!this.dom.sleep.value || !this.dom.wake.value) {
+        let totalMinutes = 0;
+
+        // 1. Calculate Night Sleep (Only if BOTH values are present)
+        if (this.dom.sleep.value && this.dom.wake.value) {
+            const [sH, sM] = this.dom.sleep.value.split(':').map(Number);
+            const [wH, wM] = this.dom.wake.value.split(':').map(Number);
+
+            let nightMins = ((wH * 60) + wM) - ((sH * 60) + sM);
+            // Handle crossing midnight (e.g. 23:00 to 07:00)
+            if (nightMins < 0) nightMins += (24 * 60);
+            
+            totalMinutes += nightMins;
+        }
+
+        // 2. Add Nap Time (Always add if present)
+        const napHours = this.dom.nap ? (parseFloat(this.dom.nap.value) || 0) : 0;
+        totalMinutes += (napHours * 60);
+
+        // 3. Handle Empty State
+        // If total is 0 and inputs are empty, show "--"
+        if (totalMinutes === 0 && !this.dom.sleep.value && !this.dom.wake.value && !napHours) {
             this.dom.display.value = "--";
             return;
         }
 
-        const [sH, sM] = this.dom.sleep.value.split(':').map(Number);
-        const [wH, wM] = this.dom.wake.value.split(':').map(Number);
-
-        let diffMins = ((wH * 60) + wM) - ((sH * 60) + sM);
-        if (diffMins < 0) diffMins += (24 * 60);
-
-        const napHours = this.dom.nap ? (parseFloat(this.dom.nap.value) || 0) : 0;
-        diffMins += (napHours * 60);
-
-        const hours = Math.floor(diffMins / 60);
-        const minutes = Math.round(diffMins % 60);
+        // 4. Format and Display
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.round(totalMinutes % 60);
         this.dom.display.value = `${hours} hr ${minutes} min`;
     }
 }
