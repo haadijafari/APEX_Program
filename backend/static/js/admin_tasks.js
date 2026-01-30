@@ -1,7 +1,10 @@
 // ----------------- Dynamic Weekdays Field Visibility -----------------
 // Show/hide the 'weekdays' field based on the selected frequency
 document.addEventListener('DOMContentLoaded', function() {
-    const freqSelect = document.getElementById('id_frequency');
+    // Look for the Inline ID 'id_schedule-0-frequency' (since it's a OneToOne Inline)
+    // Fallback to 'id_frequency' in case it's edited on its own page
+    const freqSelect = document.getElementById('id_schedule-0-frequency') || document.getElementById('id_frequency');
+    
     // Django admin wraps fields in rows with classes like "form-row field-weekdays"
     const weekdaysField = document.querySelector('.field-weekdays');
 
@@ -10,10 +13,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (freqSelect.value === 'WEEKLY') {
             // Make it visible
-            weekdaysField.style.visibility = 'visible';
+            // Using display='' allows it to revert to the default (block/flex)
+            weekdaysField.style.display = '';
         } else {
-            // Hide it, but KEEP the space it occupies (prevents height jump)
-            weekdaysField.style.visibility = 'hidden';
+            // Hide it completely (display: none removes the whitespace)
+            weekdaysField.style.display = 'none';
         }
     }
 
