@@ -160,7 +160,6 @@ class SleepModule {
 class DailyLogForm {
     constructor(formId) {
         this.form = document.getElementById(formId);
-        this.statusIndicator = document.getElementById('save-status');
         
         if (!this.form) return;
 
@@ -168,7 +167,12 @@ class DailyLogForm {
         this.isSaving = false;
         this.pendingSave = false;
 
-        this.debouncedSave = this.debounce(this.performSave.bind(this), 1000);
+        // Store the specific status element that requested the save
+        this.pendingStatusEl = null;
+
+        // Debounce passing arguments correctly
+        this.debouncedSave = this.debounce((statusEl) => this.performSave(statusEl), 1000);
+        
         this.initAutoSave();
         this.initEmojiPicker();
         this.initScoreBar();
@@ -185,34 +189,54 @@ class DailyLogForm {
 
     // --- Auto Save Logic ---
     initAutoSave() {
+        // Helper to find the correct status element based on the event target
+        const getStatusElement = (target) => {
+            const section = target.closest('.js-autosave-section');
+            // Fallback to global ID if section not found or section has no status
+            return (section && section.querySelector('.js-section-status')) 
+                   || document.getElementById('global-save-status')
+                   || document.getElementById('save-status'); // Legacy fallback
+        };
+
         // Text Inputs: Debounce
         this.form.addEventListener('input', (e) => {
-            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) this.debouncedSave();
+            if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                const statusEl = getStatusElement(e.target);
+                this.debouncedSave(statusEl);
+            }
         });
 
         // Choices: Immediate
         this.form.addEventListener('change', (e) => {
             if (['radio', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT' || e.target.type === 'time') {
-                this.performSave();
+                const statusEl = getStatusElement(e.target);
+                this.performSave(statusEl);
             }
         });
     }
 
-    async performSave() {
+    async performSave(statusEl) {
         // LOCK CHECK: If already saving, queue a retry and exit
         if (this.isSaving) {
             this.pendingSave = true;
+            // Update the pending status element so the retry highlights the latest edit
+            if (statusEl) this.pendingStatusEl = statusEl;
             return;
         }
 
         // SET LOCK
         this.isSaving = true;
 
-        this.updateStatus("Saving...", "text-secondary");
+        // Use the passed element, or if coming from pending queue, use the stored one
+        const currentStatusEl = statusEl || this.pendingStatusEl;
+        this.pendingStatusEl = null; // Reset pending target
+
+        this.updateStatus(currentStatusEl, "Saving...", "text-secondary");
+
         try {
             const data = await GateAPI.autoSave(this.form);
             if (data.status === 'success') {
-                this.updateStatus("Saved", "text-success");
+                this.updateStatus(currentStatusEl, "Saved", "text-success");
 
                 // Sync backend IDs to frontend to prevent duplicates on next save
                 if (data.new_ids) {
@@ -239,12 +263,13 @@ class DailyLogForm {
                     }
                 });
 
-                setTimeout(() => this.updateStatus("", ""), 2000);
+                setTimeout(() => this.updateStatus(currentStatusEl, "", ""), 2000);
             } else {
-                this.updateStatus("Error", "text-danger");
+                this.updateStatus(currentStatusEl, "Error", "text-danger");
             }
-        } catch {
-            this.updateStatus("Offline", "text-danger");
+        } catch (error) {
+            console.error(error);
+            this.updateStatus(currentStatusEl, "Offline", "text-danger");
         } finally {
             // RELEASE LOCK & HANDLE QUEUE
             this.isSaving = false;
@@ -252,15 +277,15 @@ class DailyLogForm {
             if (this.pendingSave) {
                 this.pendingSave = false;
                 // Recursive call to handle the edits made while we were saving
-                this.performSave(); 
+                this.performSave(this.pendingStatusEl); 
             }
         }
     }
 
-    updateStatus(text, colorClass) {
-        if (!this.statusIndicator) return;
-        this.statusIndicator.textContent = text;
-        this.statusIndicator.className = `small fw-bold text-uppercase ${colorClass}`;
+    updateStatus(element, text, colorClass) {
+        if (!element) return;
+        element.textContent = text;
+        element.className = `js-section-status small fw-bold text-uppercase transition-all ${colorClass}`;
     }
 
     // --- Emoji Picker ---
@@ -272,7 +297,7 @@ class DailyLogForm {
 
         if (!input || !slot || !popover || !picker) return;
 
-        picker.dataSource = '/static/vendor/emoji-picker/data.json'; // Fixed path for Django static
+        picker.dataSource = '/static/vendor/emoji-picker/data.json'; 
 
         slot.addEventListener('click', (e) => {
             if (popover.contains(e.target)) return;
@@ -284,7 +309,10 @@ class DailyLogForm {
             input.value = e.detail.unicode;
             popover.style.display = 'none';
             slot.classList.add('has-mood');
-            this.performSave(); // Immediate save
+            
+            // Fix: Pass status element for immediate save
+            const statusEl = slot.closest('.js-autosave-section')?.querySelector('.js-section-status');
+            this.performSave(statusEl); 
         });
 
         document.addEventListener('click', (e) => {
@@ -324,7 +352,10 @@ class DailyLogForm {
                 const row = delBtn.closest('.highlight-row');
                 row.querySelector('input[name$="-DELETE"]').checked = true;
                 row.style.display = 'none';
-                this.performSave();
+                
+                // Fix: Pass status element for immediate save
+                const statusEl = row.closest('.js-autosave-section')?.querySelector('.js-section-status');
+                this.performSave(statusEl);
             }
         });
     }
