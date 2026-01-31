@@ -1,5 +1,5 @@
-import shutil
 import os
+import shutil
 
 # Define what to copy: (Source inside node_modules, Destination inside static)
 files = [
@@ -19,6 +19,19 @@ files = [
     (
         "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js.map",
         "backend/static/vendor/bootstrap/js/bootstrap.bundle.min.js.map",
+    ),
+    # Bootstrap Icons
+    (
+        "node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
+        "backend/static/vendor/bootstrap-icons/bootstrap-icons.min.css",
+    ),
+    (
+        "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff",
+        "backend/static/vendor/bootstrap-icons/fonts/bootstrap-icons.woff",
+    ),
+    (
+        "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2",
+        "backend/static/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2",
     ),
     # Chart.js
     (
