@@ -35,7 +35,7 @@ Welcome to the official documentation. [APEX Program](https://github.com/haadija
 ## 🛠️ Tech Stack
 
 - ***Programming Language***
-  - **Python 3.10+**
+  - **Python 3.12+**
   - **UV** – ultra-fast Python package manager and virtual environment replacement
 - ***Backend***
   - **Django 5.2**

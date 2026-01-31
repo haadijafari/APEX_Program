@@ -1,22 +1,22 @@
 {
-  "name": "planner",
+  "name": "apex-program",
   "version": "1.0.0",
-  "description": "This is an **Ultimate Planner Project** (using **UV python package manager**).",
+  "description": "Apex Program Planner helps you to plan your life schedule effectively by providing a structured approach to managing your time and tasks.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/haadijafari/Planner.git"
+    "url": "git+https://github.com/haadijafari/APEX_Program.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/haadijafari/Planner/issues"
+    "url": "https://github.com/haadijafari/APEX_Program/issues"
   },
-  "homepage": "https://github.com/haadijafari/Planner#readme",
+  "homepage": "https://github.com/haadijafari/APEX_Program#readme",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "bootstrap": "^5.3.8",
