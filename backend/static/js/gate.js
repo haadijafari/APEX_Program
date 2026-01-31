@@ -164,6 +164,10 @@ class DailyLogForm {
         
         if (!this.form) return;
 
+        // State for locking
+        this.isSaving = false;
+        this.pendingSave = false;
+
         this.debouncedSave = this.debounce(this.performSave.bind(this), 1000);
         this.initAutoSave();
         this.initEmojiPicker();
@@ -195,17 +199,61 @@ class DailyLogForm {
     }
 
     async performSave() {
+        // LOCK CHECK: If already saving, queue a retry and exit
+        if (this.isSaving) {
+            this.pendingSave = true;
+            return;
+        }
+
+        // SET LOCK
+        this.isSaving = true;
+
         this.updateStatus("Saving...", "text-secondary");
         try {
             const data = await GateAPI.autoSave(this.form);
             if (data.status === 'success') {
                 this.updateStatus("Saved", "text-success");
+
+                // Sync backend IDs to frontend to prevent duplicates on next save
+                if (data.new_ids) {
+                    Object.entries(data.new_ids).forEach(([inputName, newId]) => {
+                        const idInput = this.form.querySelector(`input[name="${inputName}"]`);
+                        if (idInput) {
+                            idInput.value = newId;
+                        }
+                    });
+                }
+
+                // Update INITIAL_FORMS Counters
+                // This tells Django that these rows are now "Existing" records,
+                // preventing it from creating duplicates on the next save.
+                ['pos', 'neg'].forEach(prefix => {
+                    const initialInput = document.getElementById(`id_${prefix}-INITIAL_FORMS`);
+                    if (initialInput) {
+                        // Count how many rows now have a valid database ID
+                        const validIds = Array.from(
+                            this.form.querySelectorAll(`input[name^="${prefix}-"][name$="-id"]`)
+                        ).filter(input => input.value !== "").length;
+                        
+                        initialInput.value = validIds;
+                    }
+                });
+
                 setTimeout(() => this.updateStatus("", ""), 2000);
             } else {
                 this.updateStatus("Error", "text-danger");
             }
         } catch {
             this.updateStatus("Offline", "text-danger");
+        } finally {
+            // RELEASE LOCK & HANDLE QUEUE
+            this.isSaving = false;
+            
+            if (this.pendingSave) {
+                this.pendingSave = false;
+                // Recursive call to handle the edits made while we were saving
+                this.performSave(); 
+            }
         }
     }
 

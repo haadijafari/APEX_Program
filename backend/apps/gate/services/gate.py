@@ -152,9 +152,12 @@ def process_autosave(user, post_data):
 
     if form.is_valid() and pos_formset.is_valid() and neg_formset.is_valid():
         form.save()
-        _save_highlight_formset(pos_formset, DailyHighlight.Category.POSITIVE)
-        _save_highlight_formset(neg_formset, DailyHighlight.Category.NEGATIVE)
-        return {"success": True}
+        pos_map = _save_highlight_formset(pos_formset, DailyHighlight.Category.POSITIVE)
+        neg_map = _save_highlight_formset(neg_formset, DailyHighlight.Category.NEGATIVE)
+
+        new_ids = {**pos_map, **neg_map}
+
+        return {"success": True, "new_ids": new_ids}
     else:
         return {
             "success": False,
@@ -174,6 +177,16 @@ def _save_highlight_formset(formset, category):
         obj.save()
     for obj in formset.deleted_objects:
         obj.delete()
+
+    # Map form field names to their database IDs
+    saved_map = {}
+    for form in formset.forms:
+        # If the instance exists (was created or updated) and has an ID
+        if form.instance.pk:
+            # form.add_prefix('id') generates the HTML name, e.g., 'pos-0-id'
+            saved_map[form.add_prefix("id")] = form.instance.pk
+
+    return saved_map
 
 
 def toggle_task_completion(user, task_id):

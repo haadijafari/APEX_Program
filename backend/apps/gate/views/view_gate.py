@@ -59,7 +59,7 @@ def autosave_daily_entry(request):
     result = gate_service.process_autosave(request.user, request.POST)
 
     if result["success"]:
-        return JsonResponse({"status": "success"})
+        return JsonResponse({"status": "success", "new_ids": result.get("new_ids", {})})
 
     return JsonResponse({"status": "error", "errors": result["errors"]}, status=400)
 
