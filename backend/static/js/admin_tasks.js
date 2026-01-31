@@ -1,122 +1,140 @@
-// ----------------- Dynamic Weekdays Field Visibility -----------------
-// Show/hide the 'weekdays' field based on the selected frequency
-document.addEventListener('DOMContentLoaded', function() {
-    // Look for the Inline ID 'id_schedule-0-frequency' (since it's a OneToOne Inline)
-    // Fallback to 'id_frequency' in case it's edited on its own page
-    const freqSelect = document.getElementById('id_schedule-0-frequency') || document.getElementById('id_frequency');
-    
-    // Django admin wraps fields in rows with classes like "form-row field-weekdays"
-    const weekdaysField = document.querySelector('.field-weekdays');
+/* backend/static/js/admin_tasks.js */
 
-    function toggleWeekdays() {
-        if (!freqSelect || !weekdaysField) return;
+(function() {
+    // 1. IDEMPOTENCY GUARD
+    if (window.HAS_ADMIN_TASKS_JS_LOADED) return;
+    window.HAS_ADMIN_TASKS_JS_LOADED = true;
 
-        if (freqSelect.value === 'WEEKLY') {
-            // Make it visible
-            // Using display='' allows it to revert to the default (block/flex)
-            weekdaysField.style.display = '';
+/**
+ * ==========================================
+ * MODULE: SCHEDULE VISIBILITY CONTROLLER
+ * Handles showing/hiding the 'weekdays' field
+ * based on the frequency selection.
+ * ==========================================
+ */
+class ScheduleVisibilityController {
+    constructor() {
+        // Support both Inline (OneToOne) and Standard form IDs
+        this.freqSelect = document.getElementById('id_schedule-0-frequency') || document.getElementById('id_frequency');
+        this.weekdaysField = document.querySelector('.field-weekdays');
+
+        if (this.freqSelect && this.weekdaysField) {
+            this.init();
+        }
+    }
+
+    init() {
+        // Initial check
+        this.toggle();
+
+        // Bind listener
+        this.freqSelect.addEventListener('change', () => this.toggle());
+    }
+
+    toggle() {
+        if (this.freqSelect.value === 'WEEKLY') {
+            // Revert to default display (block/flex)
+            this.weekdaysField.style.display = '';
         } else {
-            // Hide it completely (display: none removes the whitespace)
-            weekdaysField.style.display = 'none';
+            // Hide completely
+            this.weekdaysField.style.display = 'none';
         }
     }
+}
 
-    if (freqSelect) {
-        // Run on page load (to handle existing data)
-        toggleWeekdays();
-        // Run whenever the user changes the dropdown
-        freqSelect.addEventListener('change', toggleWeekdays);
-    }
-});
-
-
-// ----------------- Dynamic XP Distribution Preview -----------------
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Apex Task Admin Loaded.");
-
-    // --- Configuration ---
-    const STAT_TYPES = {
-        'STR': 'Strength',
-        'DEX': 'Dexterity',
-        'INT': 'Intelligence',
-        'WIS': 'Wisdom',
-        'CHA': 'Charisma',
-        'CON': 'Constitution'
-    };
-
-    const RANK_XP = {
-        "E": 15,
-        "D": 35,
-        "C": 75,
-        "B": 150,
-        "A": 350,
-        "S": 700,
-        "SS": 1200,
-        "Monarch": 1500
-    };
-
-    // --- Selectors ---
-    const inputPrimary = document.getElementById('id_primary_stat');
-    const inputSecondary = document.getElementById('id_secondary_stat');
-    const inputManualRank = document.getElementById('id_manual_rank');
-    
-    // Inputs affecting Score
-    const inputDuration = document.getElementById('id_duration_minutes');
-    const inputEffort = document.getElementById('id_effort_level');
-    const inputImpact = document.getElementById('id_impact_level');
-    const inputFear = document.getElementById('id_fear_factor');
-
-    // Outputs
-    const previewSpan = document.getElementById('xp-distribution-preview');
-    // Unfold/Django readonly fields are often wrapped in specific classes. 
-    // We try to find the read-only Computed Rank value to update it visually too.
-    const computedRankRow = document.getElementById('computed-rank-preview');
-
-    // --- Create Value Display for Sliders ---
-    function addValueDisplay(inputElement, unit = "") {
-        if (!inputElement || inputElement.type !== 'range') return;
-        
-        // Check if display already exists
-        if (inputElement.nextElementSibling && inputElement.nextElementSibling.classList.contains('range-value')) {
-            return;
-        }
-
-        // Create the span
-        const displaySpan = document.createElement('span');
-        displaySpan.className = 'range-value';
-        displaySpan.style.marginLeft = '10px';
-        displaySpan.style.fontWeight = 'bold';
-        displaySpan.style.minWidth = '30px';
-        displaySpan.style.display = 'inline-block';
-        
-        // Insert after input
-        inputElement.parentNode.insertBefore(displaySpan, inputElement.nextSibling);
-
-        // Update function
-        const updateDisplay = () => {
-            displaySpan.textContent = `${inputElement.value}${unit}`;
+/**
+ * ==========================================
+ * MODULE: XP PREVIEW CONTROLLER
+ * Real-time calculation of Rank and XP split
+ * based on task parameters.
+ * ==========================================
+ */
+class XPPreviewController {
+    constructor() {
+        // --- Configuration ---
+        this.RANK_XP = {
+            "E": 15, "D": 35, "C": 75, "B": 150,
+            "A": 350, "S": 700, "SS": 1200, "Monarch": 1500
         };
 
-        // Attach listeners
-        inputElement.addEventListener('input', updateDisplay);
-        updateDisplay(); // Init
+        // --- DOM Elements ---
+        this.dom = {
+            // Stats
+            primary: document.getElementById('id_primary_stat'),
+            secondary: document.getElementById('id_secondary_stat'),
+            manualRank: document.getElementById('id_manual_rank'),
+
+            // Scoring Inputs
+            duration: document.getElementById('id_duration_minutes'),
+            effort: document.getElementById('id_effort_level'),
+            impact: document.getElementById('id_impact_level'),
+            fear: document.getElementById('id_fear_factor'),
+
+            // Outputs
+            previewSpan: document.getElementById('xp-distribution-preview'),
+            computedRankRow: document.getElementById('computed-rank-preview')
+        };
+
+        // Only initialize if critical elements exist
+        if (this.dom.primary) {
+            this.initValueDisplays();
+            this.bindEvents();
+            this.calculate(); // Initial run
+        }
     }
 
-    // Initialize Displays
-    addValueDisplay(inputEffort, "/10");
-    addValueDisplay(inputImpact, "/5");
-    addValueDisplay(inputFear, "x");
+    initValueDisplays() {
+        this.attachValueDisplay(this.dom.effort, "/10");
+        this.attachValueDisplay(this.dom.impact, "/5");
+        this.attachValueDisplay(this.dom.fear, "x");
+    }
 
-    // --- Logic ---
+    attachValueDisplay(inputElement, unit = "") {
+        if (!inputElement || inputElement.type !== 'range') return;
 
-    function calculateRankAndXP() {
-        if (!previewSpan) return;
+        // Prevent duplicates
+        if (inputElement.nextElementSibling && inputElement.nextElementSibling.classList.contains('range-value')) return;
 
-        // 1. Calculate Score (Replicating Python Logic)
-        const duration = parseInt(inputDuration?.value || 15);
-        const effort = parseInt(inputEffort?.value || 1);
-        const impact = parseInt(inputImpact?.value || 1);
-        const fear = parseFloat(inputFear?.value || 1.0);
+        // Create UI
+        const displaySpan = document.createElement('span');
+        displaySpan.className = 'range-value';
+        Object.assign(displaySpan.style, {
+            marginLeft: '10px',
+            fontWeight: 'bold',
+            minWidth: '30px',
+            display: 'inline-block'
+        });
+
+        // Insert & Bind
+        inputElement.parentNode.insertBefore(displaySpan, inputElement.nextSibling);
+        
+        const update = () => displaySpan.textContent = `${inputElement.value}${unit}`;
+        inputElement.addEventListener('input', update);
+        update();
+    }
+
+    bindEvents() {
+        const inputs = [
+            this.dom.primary, this.dom.secondary, this.dom.manualRank,
+            this.dom.duration, this.dom.effort, this.dom.impact, this.dom.fear
+        ];
+
+        inputs.forEach(input => {
+            if (input) {
+                input.addEventListener('change', () => this.calculate());
+                input.addEventListener('keyup', () => this.calculate());
+            }
+        });
+    }
+
+    calculate() {
+        if (!this.dom.previewSpan) return;
+
+        // 1. Calculate Score
+        const duration = parseInt(this.dom.duration?.value || 15);
+        const effort = parseInt(this.dom.effort?.value || 1);
+        const impact = parseInt(this.dom.impact?.value || 1);
+        const fear = parseFloat(this.dom.fear?.value || 1.0);
 
         const durationScore = Math.min(duration, 240); // Cap at 4 hours
         // Formula: ((Duration * 0.25) + (Effort * 1.5) + (Impact^3)) * FearFactor
@@ -125,31 +143,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 2. Determine Computed Rank
         let computedRank = "E";
-        if (totalScore <= 20) computedRank = "E";
-        else if (totalScore <= 45) computedRank = "D";
-        else if (totalScore <= 75) computedRank = "C";
-        else if (totalScore <= 120) computedRank = "B";
-        else if (totalScore <= 180) computedRank = "A";
-        else if (totalScore <= 250) computedRank = "S";
-        else if (totalScore <= 280) computedRank = "SS";
-        else computedRank = "Monarch";
+        if (totalScore > 280) computedRank = "Monarch";
+        else if (totalScore > 250) computedRank = "SS";
+        else if (totalScore > 180) computedRank = "S";
+        else if (totalScore > 120) computedRank = "A";
+        else if (totalScore > 75) computedRank = "B";
+        else if (totalScore > 45) computedRank = "C";
+        else if (totalScore > 20) computedRank = "D";
 
-        // Update the Readonly Computed Rank UI (Visual only)
-        if (computedRankRow) {
-            computedRankRow.textContent = `${computedRank}-Rank (Score: ${totalScore.toFixed(1)})`;
+        // Update UI for Computed Rank
+        if (this.dom.computedRankRow) {
+            this.dom.computedRankRow.textContent = `${computedRank}-Rank (Score: ${totalScore.toFixed(1)})`;
         }
 
         // 3. Determine Final Rank (Manual overrides Computed)
-        const manualRank = inputManualRank?.value;
+        const manualRank = this.dom.manualRank?.value;
         const finalRank = manualRank || computedRank;
-        
-        // 4. Get XP Reward
-        const totalXP = RANK_XP[finalRank] || 15;
+        const totalXP = this.RANK_XP[finalRank] || 15;
 
-        // 5. Calculate Split
-        const pStat = inputPrimary?.value || 'STR';
-        const sStat = inputSecondary?.value;
-
+        // 4. Calculate Split
+        const pStat = this.dom.primary?.value || 'STR';
+        const sStat = this.dom.secondary?.value;
         let outputText = "";
 
         if (!sStat || sStat === pStat) {
@@ -158,34 +172,26 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Case 2: 60/40 Split
             const pAmount = Math.floor(totalXP * 0.60);
-            const sAmount = totalXP - pAmount; // Remainder ensures no rounding loss
+            const sAmount = totalXP - pAmount; 
             outputText = `${pStat}: ${pAmount} XP, ${sStat}: ${sAmount} XP`;
         }
 
-        // 6. Render
-        previewSpan.textContent = outputText;
-        
-        // Optional: Color coding
-        if (manualRank) {
-            previewSpan.style.color = "#d35400"; // Orange if manual override
-        } else {
-            previewSpan.style.color = "#27ae60"; // Green if auto
-        }
+        // 5. Render Output
+        this.dom.previewSpan.textContent = outputText;
+        this.dom.previewSpan.style.color = manualRank ? "#d35400" : "#27ae60"; // Orange if manual, Green if auto
     }
+}
 
-    // --- Event Listeners ---
-    const inputs = [
-        inputPrimary, inputSecondary, inputManualRank,
-        inputDuration, inputEffort, inputImpact, inputFear
-    ];
-
-    inputs.forEach(input => {
-        if (input) {
-            input.addEventListener('change', calculateRankAndXP);
-            input.addEventListener('keyup', calculateRankAndXP); // For immediate feedback
-        }
-    });
-
-    // Run once on load to set initial state
-    calculateRankAndXP();
+/**
+ * ==========================================
+ * BOOTSTRAPPER
+ * ==========================================
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🚀 Admin Tasks JS Initialized");
+    
+    new ScheduleVisibilityController();
+    new XPPreviewController();
 });
+
+})();
