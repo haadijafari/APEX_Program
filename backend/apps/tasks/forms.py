@@ -100,3 +100,62 @@ class TaskScheduleAdminForm(forms.ModelForm):
         # Convert the list of strings back to a list of integers for the JSONField
         data = self.cleaned_data["weekdays"]
         return [int(d) for d in data]
+
+
+class GateTaskForm(forms.ModelForm):
+    """
+    The 'Full' form for the Frontend Modal.
+    Excludes hierarchy (parent) and schedule, but includes all RPG stats.
+    """
+
+    class Meta:
+        model = Task
+        fields = [
+            "title",
+            "description",
+            "manual_rank",  # User can override rank
+            "primary_stat",
+            "secondary_stat",
+            "duration_minutes",
+            "effort_level",
+            "impact_level",
+            "fear_factor",
+        ]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Quest Title"}
+            ),
+            "description": TinyMCE(attrs={"cols": 80, "rows": 5}),
+            "manual_rank": forms.Select(attrs={"class": "form-select"}),
+            "primary_stat": forms.Select(attrs={"class": "form-select"}),
+            "secondary_stat": forms.Select(attrs={"class": "form-select"}),
+            # Sliders for the RPG feel
+            "duration_minutes": forms.NumberInput(attrs={"class": "form-control"}),
+            "effort_level": forms.NumberInput(
+                attrs={
+                    "class": "form-range",
+                    "type": "range",
+                    "min": "1",
+                    "max": "10",
+                    "step": "1",
+                }
+            ),
+            "impact_level": forms.NumberInput(
+                attrs={
+                    "class": "form-range",
+                    "type": "range",
+                    "min": "1",
+                    "max": "5",
+                    "step": "1",
+                }
+            ),
+            "fear_factor": forms.NumberInput(
+                attrs={
+                    "class": "form-range",
+                    "type": "range",
+                    "min": "1.0",
+                    "max": "2.0",
+                    "step": "0.1",
+                }
+            ),
+        }

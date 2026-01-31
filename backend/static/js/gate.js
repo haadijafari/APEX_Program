@@ -1,5 +1,3 @@
-/* backend/static/js/gate.js */
-
 (function() {
     // 1. IDEMPOTENCY GUARD: Prevent double-loading
     if (window.HAS_GATE_JS_LOADED) {
@@ -23,15 +21,21 @@ class GateAPI {
         return xsrfCookies.length ? decodeURIComponent(xsrfCookies[0].substring(name.length + 1)) : null;
     }
 
+    static get headers() {
+        return {
+            "X-CSRFToken": this.getCookie('csrftoken'),
+            "X-Requested-With": "XMLHttpRequest"
+        };
+    }
+
     static async autoSave(formElement) {
         const url = formElement.dataset.autosaveUrl || "/gate/autosave/";
         const formData = new FormData(formElement);
-        const csrfToken = formElement.querySelector('[name=csrfmiddlewaretoken]')?.value;
-
+        
         try {
             const response = await fetch(url, {
                 method: "POST",
-                headers: { "X-CSRFToken": csrfToken },
+                headers: { "X-CSRFToken": this.getCookie('csrftoken') },
                 body: formData
             });
             return await response.json();
@@ -41,21 +45,48 @@ class GateAPI {
         }
     }
 
-    static async toggleRoutine(itemId) {
-        const url = `/routine/toggle/${itemId}/`;
-        const csrfToken = this.getCookie('csrftoken');
-
+    static async toggleTaskStatus(taskId) {
+        const url = `/task/toggle/${taskId}/`; 
+        
         try {
             const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json'
-                },
+                headers: this.headers,
             });
             return await response.json();
         } catch (error) {
-            console.error("Routine Toggle Failed:", error);
+            console.error("Task Toggle Failed:", error);
+            throw error;
+        }
+    }
+
+    static async createTask(formData) {
+        const url = "/task/add/"; // Ensure this matches your urls.py
+        
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "X-CSRFToken": this.getCookie('csrftoken') }, // No Content-Type for FormData
+                body: formData
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Create Task Failed:", error);
+            throw error;
+        }
+    }
+
+    static async archiveTask(taskId) {
+        const url = `/task/${taskId}/archive/`;
+        
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: this.headers
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Archive Task Failed:", error);
             throw error;
         }
     }
@@ -193,7 +224,7 @@ class DailyLogForm {
 
         if (!input || !slot || !popover || !picker) return;
 
-        picker.dataSource = '/assets/emoji-data.json';
+        picker.dataSource = '/static/vendor/emoji-picker/data.json'; // Fixed path for Django static
 
         slot.addEventListener('click', (e) => {
             if (popover.contains(e.target)) return;
@@ -269,6 +300,116 @@ class DailyLogForm {
 
 /**
  * ==========================================
+ * UI MODULE: TASK MANAGER (NEW)
+ * Handles Creation, Archive, and Rendering
+ * ==========================================
+ */
+class TaskManager {
+    constructor() {
+        this.dom = {
+            list: document.getElementById('gate-task-list'),
+            form: document.getElementById('gate-add-task-form'),
+            modalEl: document.getElementById('taskModal'),
+        };
+
+        // Initialize Bootstrap Modal Wrapper
+        if (this.dom.modalEl) {
+            this.modal = new bootstrap.Modal(this.dom.modalEl);
+            this.initCreator();
+        }
+
+        // Initialize Archive Listeners
+        if (this.dom.list) {
+            this.initArchiver();
+        }
+    }
+
+    // --- Task Creation ---
+    initCreator() {
+        const saveBtn = this.dom.modalEl.querySelector('.btn-primary');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => this.handleCreate());
+        }
+    }
+
+    async handleCreate() {
+        // Sync TinyMCE if present
+        if (typeof tinymce !== 'undefined') tinymce.triggerSave();
+
+        const formData = new FormData(this.dom.form);
+        
+        try {
+            const data = await GateAPI.createTask(formData);
+            
+            if (data.status === 'success') {
+                this.appendTaskToUI(data.task);
+                this.dom.form.reset();
+                this.modal.hide();
+            } else {
+                alert('Error creating task: ' + JSON.stringify(data.errors));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Failed to create task. See console.');
+        }
+    }
+
+    appendTaskToUI(task) {
+        if (!this.dom.list) return;
+
+        // Remove "No active tasks" message if it exists
+        const emptyMsg = this.dom.list.querySelector('.text-center');
+        if (emptyMsg) emptyMsg.remove();
+
+        const html = `
+            <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-${task.id}">
+                <div class="d-flex align-items-center">
+                    <input class="form-check-input me-2" 
+                           type="checkbox" 
+                           onclick="toggleTask(${task.id})">
+                    <div class="ms-2">
+                        <div class="fw-bold">${task.title}</div>
+                        <small class="text-muted badge bg-dark">${task.rank}</small>
+                    </div>
+                </div>
+                <button class="btn btn-link text-danger p-0 delete-task-btn" data-task-id="${task.id}">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        `;
+        
+        // Append at top or bottom? User preference. Usually top for new things.
+        this.dom.list.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // --- Task Archiving ---
+    initArchiver() {
+        this.dom.list.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.delete-task-btn');
+            if (!btn) return;
+
+            const taskId = btn.dataset.taskId;
+            if (confirm("Are you sure you want to remove this task?")) {
+                await this.handleArchive(taskId);
+            }
+        });
+    }
+
+    async handleArchive(taskId) {
+        try {
+            const data = await GateAPI.archiveTask(taskId);
+            if (data.status === 'success') {
+                const row = document.getElementById(`task-row-${taskId}`);
+                if (row) row.remove();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+}
+
+/**
+ * ==========================================
  * BOOTSTRAPPER
  * ==========================================
  */
@@ -277,16 +418,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     new SleepModule();
     new DailyLogForm('dayPageForm');
+    new TaskManager();
 
-    // Global helper for the Sidebar Routines
+    // Global helper for Checkboxes (Routines & Tasks)
     // Must be explicitly attached to window to be accessible by HTML onclick=""
     window.toggleTask = async function(itemId) {
         try {
-            const data = await GateAPI.toggleRoutine(itemId);
-            console.log(`Routine ${data.item_id}: ${data.status}`);
+            const data = await GateAPI.toggleTaskStatus(itemId);
+            console.log(`Task ${itemId}: ${data.status}`);
+            
+            // Optional: Visually strike-through if needed, 
+            // though CSS often handles this via :checked sibling selectors if structured correctly.
         } catch {
             // Revert checkbox on failure
-            const cb = document.getElementById(`item${itemId}`);
+            const cb = document.querySelector(`input[onclick="toggleTask(${itemId})"]`);
             if (cb) cb.checked = !cb.checked;
         }
     };

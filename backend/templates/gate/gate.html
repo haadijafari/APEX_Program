@@ -3,6 +3,7 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/gate.css' %}">
+    {{ task_form.media.css }} {# For TinyMCE #}
 {% endblock extra_css %}
 
 {% block content %}
@@ -11,18 +12,26 @@
     {% include "gate/_header.html" %}
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-md-3">
+            {% include "gate/_tasks.html" %}
+        </div>
+
+        <div class="col-lg-6">
             {% include "gate/_form_main.html" %}
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             {% include "gate/_routines.html" %}
         </div>
     </div>
 </div>
+
+{% include "gate/_modal_add_task.html" %}
+
 {% endblock content %}
 
 {% block extra_js %}
 <script type="module" src="{% static 'vendor/emoji-picker/index.js' %}"></script>
+{{ task_form.media.js }} {# For TinyMCE #}
 <script src="{% static 'js/gate.js' %}"></script>
 {% endblock extra_js %}

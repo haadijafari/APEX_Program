@@ -1,0 +1,30 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="text-muted mb-0">Tasks</h4>
+    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#taskModal">
+        <i class="bi bi-plus-lg"></i>
+    </button>
+</div>
+
+<div class="list-group shadow-sm" id="gate-task-list">
+    {% for task in tasks %}
+        <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-{{ task.id }}">
+            <div class="d-flex align-items-center">
+                <input class="form-check-input me-2" 
+                       type="checkbox" 
+                       {% if task.id in completed_task_ids %}checked{% endif %}
+                       onclick="toggleTask({{ task.id }})">
+                
+                <div class="ms-2">
+                    <div class="fw-bold">{{ task.title }}</div>
+                    <small class="text-muted badge bg-dark">{{ task.final_rank }}-Rank</small>
+                </div>
+            </div>
+            
+            <button class="btn btn-link text-danger p-0" onclick="archiveTask({{ task.id }})">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    {% empty %}
+        <div class="text-center text-muted py-3">No active tasks.</div>
+    {% endfor %}
+</div>

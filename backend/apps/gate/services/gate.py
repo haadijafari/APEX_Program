@@ -11,6 +11,7 @@ from apps.gate.forms import (
     PositiveHighlightFormSet,
 )
 from apps.gate.models import DailyEntry, DailyHighlight
+from apps.tasks.forms import GateTaskForm
 from apps.tasks.models import Task, TaskLog
 
 
@@ -33,7 +34,7 @@ def initialize_forms(daily_entry, post_data=None):
     Initializes the Main Form and both Highlight Formsets.
     Handles both GET (empty/bound to instance) and POST (bound to data).
     """
-    form = DailyEntryForm(post_data, instance=daily_entry)
+    daily_entry_form = DailyEntryForm(post_data, instance=daily_entry)
 
     # specific querysets to separate positive/negative in the UI
     pos_qs = daily_entry.highlights.filter(category=DailyHighlight.Category.POSITIVE)
@@ -54,11 +55,40 @@ def initialize_forms(daily_entry, post_data=None):
         initial=[{"category": DailyHighlight.Category.NEGATIVE}],
     )
 
+    task_form = GateTaskForm()
+
     return {
-        "form": form,
+        "form": daily_entry_form,
         "pos_formset": pos_formset,
         "neg_formset": neg_formset,
+        "task_form": task_form,
     }
+
+
+def create_standalone_task(user, data):
+    """
+    Validates and creates a new standalone task for the user.
+    Returns (success: bool, result: Task|Errors).
+    """
+    form = GateTaskForm(data)
+    if form.is_valid():
+        task = form.save(commit=False)
+        task.profile = user.profile
+        # Standalone tasks have no parent or schedule by definition here
+        task.save()
+        return True, task
+    return False, form.errors
+
+
+def archive_task(user, task_id):
+    """
+    Soft-deletes a task (sets is_active=False).
+    """
+    # specific queryset to ensure user owns the task
+    task = get_object_or_404(Task, id=task_id, profile__user=user)
+    task.is_active = False
+    task.save()
+    return True
 
 
 def get_tasks_context(user, today):
@@ -75,9 +105,13 @@ def get_tasks_context(user, today):
         .order_by("order", "created_at")
     )
 
-    # 2. Split into Routines and Standalone Tasks
+    # 2. Split into Categories
+    # Routines: Tasks that are containers (have subtasks) AND have a schedule.
     routines = [t for t in all_tasks if t.is_routine]
-    standalone_tasks = [t for t in all_tasks if not t.is_routine]
+
+    # Standalone Tasks: One-time tasks only (No Schedule).
+    # We explicitly exclude anything that is a 'Habit' (has a schedule).
+    standalone_tasks = [t for t in all_tasks if not t.is_habit]
 
     # 3. Fetch Completed Items for TODAY
     completed_task_ids = set(

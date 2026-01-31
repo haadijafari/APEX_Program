@@ -72,3 +72,37 @@ def toggle_task_log(request, task_id):
     """
     status = gate_service.toggle_task_completion(request.user, task_id)
     return JsonResponse({"status": status, "task_id": task_id})
+
+
+@login_required
+@require_POST
+def add_task_view(request):
+    """
+    AJAX Endpoint: Creates a new task via Modal.
+    """
+    success, result = gate_service.create_standalone_task(request.user, request.POST)
+
+    if success:
+        # Return data needed to prepend the new task to the list without refresh
+        return JsonResponse(
+            {
+                "status": "success",
+                "task": {
+                    "id": result.id,
+                    "title": result.title,
+                    "rank": result.computed_rank,  # or final_rank
+                },
+            }
+        )
+
+    return JsonResponse({"status": "error", "errors": result}, status=400)
+
+
+@login_required
+@require_POST
+def archive_task_view(request, task_id):
+    """
+    AJAX Endpoint: Soft deletes a task.
+    """
+    gate_service.archive_task(request.user, task_id)
+    return JsonResponse({"status": "success", "task_id": task_id})

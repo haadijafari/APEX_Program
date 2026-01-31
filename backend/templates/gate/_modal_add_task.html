@@ -1,0 +1,62 @@
+<div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Initialize New Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="gate-add-task-form" method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Title</label>
+                            {{ task_form.title }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            {{ task_form.description }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Manual Rank (Optional)</label>
+                            {{ task_form.manual_rank }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Duration (Minutes)</label>
+                            {{ task_form.duration_minutes }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Effort</label>
+                            {{ task_form.effort_level }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Impact</label>
+                            {{ task_form.impact_level }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fear Factor</label>
+                            {{ task_form.fear_factor }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Primary Stat</label>
+                            {{ task_form.primary_stat }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Secondary Stat</label>
+                            {{ task_form.secondary_stat }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitNewTask()">Create Task</button>
+            </div>
+        </div>
+    </div>
+</div>
