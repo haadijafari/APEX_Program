@@ -56,16 +56,21 @@ def get_sleep_data(user, month_info):
 
         entry = sleep_map.get(c_g_date)
         duration = 0
-        if entry and entry.wake_up_time and entry.sleep_time:
-            wt = entry.wake_up_time
-            st = entry.sleep_time
-            wake_hours = wt.hour + (wt.minute / 60.0)
-            sleep_hours = st.hour + (st.minute / 60.0)
+        if entry:
+            duration += entry.nap_duration
 
-            if st > wt:
-                duration = (24.0 - sleep_hours) + wake_hours
-            else:
-                duration = wake_hours - sleep_hours
+            if entry.wake_up_time and entry.sleep_time:
+                wt = entry.wake_up_time
+                st = entry.sleep_time
+                wake_hours = wt.hour + (wt.minute / 60.0)
+                sleep_hours = st.hour + (st.minute / 60.0)
+
+                if st > wt:
+                    # Crossed midnight (e.g. 23:00 to 07:00)
+                    duration = (24.0 - sleep_hours) + wake_hours
+                else:
+                    # Same day (e.g. 01:00 to 09:00)
+                    duration = wake_hours - sleep_hours
 
         sleep_data.append(round(duration, 1))
 
