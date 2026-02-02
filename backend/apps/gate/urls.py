@@ -29,6 +29,8 @@ urlpatterns = [
     ),
     # Task Manager
     path("task/add/", views.add_task_view, name="add_task"),
+    path("task/<int:task_id>/details/", views.task_details_view, name="task_details"),
+    path("task/<int:task_id>/update/", views.update_task_view, name="update_task"),
     path("task/<int:task_id>/archive/", views.archive_task_view, name="archive_task"),
     # Assets
     path("assets/emoji-data.json", assets.emoji_data_view, name="emoji_data"),

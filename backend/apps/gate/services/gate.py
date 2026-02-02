@@ -2,6 +2,7 @@ from datetime import datetime
 
 import jdatetime
 from django.db.models import Count
+from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
@@ -78,6 +79,47 @@ def create_standalone_task(user, data):
         task.save()
         return True, task
     return False, form.errors
+
+
+def update_standalone_task(user, task_id, data):
+    """
+    Validates and updates an existing standalone task.
+    """
+    task = get_object_or_404(Task, id=task_id, profile__user=user)
+    form = GateTaskForm(data, instance=task)
+
+    if form.is_valid():
+        task = form.save()
+        return True, task
+    return False, form.errors
+
+
+def get_task_details(user, task_id):
+    """
+    Fetches task details to populate the Edit Modal.
+    Returns a dictionary of field values.
+    """
+    task = get_object_or_404(Task, id=task_id, profile__user=user)
+
+    # Convert model instance to a dictionary
+    data = model_to_dict(
+        task,
+        fields=[
+            "title",
+            "description",
+            "manual_rank",
+            "duration_minutes",
+            "effort_level",
+            "impact_level",
+            "fear_factor",
+            "primary_stat",
+            "secondary_stat",
+        ],
+    )
+
+    # Add ID explicitly (model_to_dict doesn't include the PK by default)
+    data["id"] = task.id
+    return data
 
 
 def archive_task(user, task_id):

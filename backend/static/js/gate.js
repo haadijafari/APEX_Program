@@ -76,6 +76,32 @@ class GateAPI {
         }
     }
 
+    // Fetch Task Details
+    static async getTaskDetails(taskId) {
+        try {
+            const response = await fetch(`/task/${taskId}/details/`, { headers: this.headers });
+            return await response.json();
+        } catch (error) {
+            console.error("Get Task Details Failed:", error);
+            throw error;
+        }
+    }
+
+    // Update Task
+    static async updateTask(taskId, formData) {
+        try {
+            const response = await fetch(`/task/${taskId}/update/`, {
+                method: "POST",
+                headers: { "X-CSRFToken": this.getCookie('csrftoken') },
+                body: formData
+            });
+            return await response.json();
+        } catch (error) {
+            console.error("Update Task Failed:", error);
+            throw error;
+        }
+    }
+
     static async archiveTask(taskId) {
         const url = `/task/${taskId}/archive/`;
         
@@ -354,60 +380,166 @@ class TaskManager {
             list: document.getElementById('pending-tasks-list'),
             form: document.getElementById('gate-add-task-form'),
             modalEl: document.getElementById('taskModal'),
+            saveBtn: document.getElementById('btn-save-task'),
+            modalTitle: document.getElementById('taskModalTitle'),
+            hiddenId: document.getElementById('task-id-hidden')
         };
 
         if (this.dom.modalEl) {
-            this.modal = new bootstrap.Modal(this.dom.modalEl);
-            this.initCreator();
+            // FIX: Use getOrCreateInstance to share the instance with Bootstrap's data-api
+            this.modal = bootstrap.Modal.getOrCreateInstance(this.dom.modalEl);
+            this.initSaver();
         }
     }
 
-    initCreator() {
-        const saveBtn = this.dom.modalEl.querySelector('.btn-primary');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => this.handleCreate());
+    initSaver() {
+        if (this.dom.saveBtn) {
+            // Remove any existing listeners to be safe (though constructor runs once)
+            const newBtn = this.dom.saveBtn.cloneNode(true);
+            this.dom.saveBtn.parentNode.replaceChild(newBtn, this.dom.saveBtn);
+            this.dom.saveBtn = newBtn;
+            
+            this.dom.saveBtn.addEventListener('click', () => this.handleSave());
         }
     }
 
-    async handleCreate() {
+    resetForm() {
+        if (!this.dom.form) return;
+        
+        this.dom.form.reset();
+        if (this.dom.hiddenId) this.dom.hiddenId.value = '';
+        if (this.dom.modalTitle) this.dom.modalTitle.textContent = "Initialize New Task";
+        if (this.dom.saveBtn) this.dom.saveBtn.textContent = "Create Task";
+        
+        // Clear TinyMCE
+        if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
+            tinymce.activeEditor.setContent('');
+        }
+    }
+
+    // --- Explicit Create Handler ---
+    openCreator() {
+        this.resetForm();
+        this.modal.show();
+    }
+
+    // --- Explicit Edit Handler ---
+    async openEditor(taskId) {
+        try {
+            // 1. Fetch Data
+            const data = await GateAPI.getTaskDetails(taskId);
+            
+            if (data.status === 'success') {
+                const task = data.task;
+                
+                // 2. Populate Hidden ID
+                if (this.dom.hiddenId) this.dom.hiddenId.value = task.id;
+                
+                // 3. Populate Standard Fields
+                const setVal = (name, val) => {
+                    // Try by Name first (Standard Django)
+                    let el = this.dom.form.querySelector(`[name="${name}"]`);
+                    // Fallback to ID if name selector fails (Django defaults id="id_field")
+                    if (!el) el = this.dom.form.querySelector(`#id_${name}`);
+                    
+                    if (el) {
+                        el.value = (val === null || val === undefined) ? '' : val;
+                    }
+                };
+
+                setVal('title', task.title);
+                setVal('manual_rank', task.manual_rank);
+                setVal('duration_minutes', task.duration_minutes);
+                setVal('effort_level', task.effort_level);
+                setVal('impact_level', task.impact_level);
+                setVal('fear_factor', task.fear_factor);
+                setVal('primary_stat', task.primary_stat);
+                setVal('secondary_stat', task.secondary_stat);
+
+                // 4. Populate TinyMCE (Description)
+                if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
+                     tinymce.activeEditor.setContent(task.description || '');
+                } else {
+                     setVal('description', task.description);
+                }
+
+                // 5. Update Modal UI
+                if (this.dom.modalTitle) this.dom.modalTitle.textContent = "Edit Task";
+                if (this.dom.saveBtn) this.dom.saveBtn.textContent = "Update Task";
+
+                // 6. Show Modal (Only after population is done)
+                this.modal.show();
+            }
+        } catch (error) {
+            console.error("Failed to open editor:", error);
+            alert("Failed to load task details. Please try again.");
+        }
+    }
+
+    async handleSave() {
         if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 
         const formData = new FormData(this.dom.form);
+        const taskId = this.dom.hiddenId ? this.dom.hiddenId.value : null;
+        const isUpdate = !!taskId;
         
         try {
-            const data = await GateAPI.createTask(formData);
+            let data;
+            if (isUpdate) {
+                data = await GateAPI.updateTask(taskId, formData);
+            } else {
+                data = await GateAPI.createTask(formData);
+            }
             
             if (data.status === 'success') {
-                this.appendTaskToUI(data.task);
-                this.dom.form.reset();
+                if (isUpdate) {
+                    this.updateTaskInUI(data.task);
+                } else {
+                    this.appendTaskToUI(data.task);
+                }
                 this.modal.hide();
+                // Reset happens automatically on next openCreator call
             } else {
-                alert('Error creating task: ' + JSON.stringify(data.errors));
+                alert('Error: ' + JSON.stringify(data.errors));
             }
         } catch (error) {
             console.error(error);
-            alert('Failed to create task. See console.');
+            alert('Failed to save task.');
         }
+    }
+
+    updateTaskInUI(task) {
+        const row = document.getElementById(`task-row-${task.id}`);
+        if (!row) return;
+
+        const titleEl = row.querySelector('.fw-bold'); 
+        if (titleEl) {
+            titleEl.textContent = task.title;
+            // Update Popover
+            if (task.description) {
+                const oldPop = bootstrap.Popover.getInstance(titleEl);
+                if (oldPop) oldPop.dispose();
+                titleEl.setAttribute('data-bs-content', task.description);
+                new bootstrap.Popover(titleEl, {
+                    content: task.description, html: true, trigger: 'hover', placement: 'top'
+                });
+            }
+        }
+        const rankEl = row.querySelector('.badge');
+        if (rankEl) rankEl.textContent = `${task.rank}-Rank`;
     }
 
     appendTaskToUI(task) {
         if (!this.dom.list) return;
-
-        // Remove "No active tasks" message if it exists
         const emptyMsg = this.dom.list.querySelector('.empty-msg');
         if (emptyMsg) emptyMsg.remove();
 
-        // 1. Create a container first to easily access DOM elements
         const wrapper = document.createElement('div');
-        
-        // 2. Build HTML Structure
         wrapper.innerHTML = `
             <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-${task.id}">
                 <div class="d-flex align-items-center">
-                    <input class="form-check-input me-2" 
-                           type="checkbox" 
-                           onclick="toggleTask(${task.id})">
-                    <div class="ms-2">
+                    <input class="form-check-input me-2" type="checkbox" onclick="toggleTask(${task.id})">
+                    <div class="ms-2" onclick="editTask(${task.id})" style="cursor: pointer;">
                         <div class="fw-bold task-title">${task.title}</div>
                         <small class="text-muted badge bg-dark">${task.rank}-Rank</small>
                     </div>
@@ -419,22 +551,16 @@ class TaskManager {
         `;
 
         const row = wrapper.firstElementChild;
-        
-        // 3. Initialize Popover if description exists
         if (task.description) {
             const titleEl = row.querySelector('.task-title');
             new bootstrap.Popover(titleEl, {
-                content: task.description,
-                html: true,
-                trigger: 'hover',
-                placement: 'top'
+                content: task.description, html: true, trigger: 'hover', placement: 'top'
             });
         }
-        
-        // 4. Append to list
         this.dom.list.insertAdjacentElement('beforeend', row);
     }
 }
+
 
 /**
  * ==========================================
@@ -519,6 +645,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error(error);
         }
+    };
+
+    const taskManager = new TaskManager();
+
+    // 3. Edit Task Global Helper
+    window.editTask = function(taskId) {
+        taskManager.openEditor(taskId);
+    };
+
+    // 4. Create Task Global Helper
+    window.initCreateTask = function() {
+        taskManager.openCreator();
     };
 });
 

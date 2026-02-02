@@ -13,7 +13,7 @@
                        type="checkbox" 
                        onclick="toggleTask({{ task.id }})">
                 
-                <div class="ms-2">
+                <div class="ms-2" onclick="editTask({{ task.id }})" style="cursor: pointer;">
                     <div class="fw-bold"
                          {% if task.description %}
                          data-bs-toggle="popover"

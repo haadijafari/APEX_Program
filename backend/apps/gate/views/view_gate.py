@@ -100,6 +100,41 @@ def add_task_view(request):
 
 
 @login_required
+def task_details_view(request, task_id):
+    """
+    AJAX Endpoint: Returns task details (JSON) for editing.
+    """
+    data = gate_service.get_task_details(request.user, task_id)
+    return JsonResponse({"status": "success", "task": data})
+
+
+@login_required
+@require_POST
+def update_task_view(request, task_id):
+    """
+    AJAX Endpoint: Updates an existing task.
+    """
+    success, result = gate_service.update_standalone_task(
+        request.user, task_id, request.POST
+    )
+
+    if success:
+        return JsonResponse(
+            {
+                "status": "success",
+                "task": {
+                    "id": result.id,
+                    "title": result.title,
+                    "rank": result.computed_rank,
+                    "description": result.description,
+                },
+            }
+        )
+
+    return JsonResponse({"status": "error", "errors": result}, status=400)
+
+
+@login_required
 @require_POST
 def archive_task_view(request, task_id):
     """
