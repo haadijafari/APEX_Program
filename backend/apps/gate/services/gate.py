@@ -110,20 +110,41 @@ def get_tasks_context(user, today):
     routines = [t for t in all_tasks if t.is_routine]
 
     # Standalone Tasks: One-time tasks only (No Schedule).
-    # We explicitly exclude anything that is a 'Habit' (has a schedule).
     standalone_tasks = [t for t in all_tasks if not t.is_habit]
 
     # 3. Fetch Completed Items for TODAY
-    completed_task_ids = set(
+    completed_today_ids = set(
         TaskLog.objects.filter(
             task__profile__user=user, completed_at__date=today
         ).values_list("task_id", flat=True)
     )
 
+    # 4. Filter Standalone Tasks (Pending vs Done Today vs Done Previously)
+    # We want to hide One-Time tasks that were completed in the past.
+
+    # Get IDs of standalone tasks that have EVER been completed
+    st_ids = [t.id for t in standalone_tasks]
+    ever_completed_ids = set(
+        TaskLog.objects.filter(task_id__in=st_ids).values_list("task_id", flat=True)
+    )
+
+    pending_tasks = []
+    done_tasks = []
+
+    for t in standalone_tasks:
+        if t.id in completed_today_ids:
+            # Completed TODAY -> Show in Done List
+            done_tasks.append(t)
+        elif t.id not in ever_completed_ids:
+            # Never completed -> Show in Pending List
+            # (If it was completed yesterday, it's in ever_completed_ids but not completed_today_ids, so we skip it)
+            pending_tasks.append(t)
+
     return {
         "routines": routines,
-        "tasks": standalone_tasks,
-        "completed_task_ids": completed_task_ids,
+        "tasks": pending_tasks,  # Replaces the full list with just pending
+        "done_tasks": done_tasks,  # New list for today's completions
+        "completed_task_ids": completed_today_ids,
     }
 
 

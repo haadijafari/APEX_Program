@@ -61,12 +61,12 @@ class GateAPI {
     }
 
     static async createTask(formData) {
-        const url = "/task/add/"; // Ensure this matches your urls.py
+        const url = "/task/add/"; 
         
         try {
             const response = await fetch(url, {
                 method: "POST",
-                headers: { "X-CSRFToken": this.getCookie('csrftoken') }, // No Content-Type for FormData
+                headers: { "X-CSRFToken": this.getCookie('csrftoken') }, 
                 body: formData
             });
             return await response.json();
@@ -121,30 +121,24 @@ class SleepModule {
     calculate() {
         let totalMinutes = 0;
 
-        // 1. Calculate Night Sleep (Only if BOTH values are present)
         if (this.dom.sleep.value && this.dom.wake.value) {
             const [sH, sM] = this.dom.sleep.value.split(':').map(Number);
             const [wH, wM] = this.dom.wake.value.split(':').map(Number);
 
             let nightMins = ((wH * 60) + wM) - ((sH * 60) + sM);
-            // Handle crossing midnight (e.g. 23:00 to 07:00)
             if (nightMins < 0) nightMins += (24 * 60);
             
             totalMinutes += nightMins;
         }
 
-        // 2. Add Nap Time (Always add if present)
         const napHours = this.dom.nap ? (parseFloat(this.dom.nap.value) || 0) : 0;
         totalMinutes += (napHours * 60);
 
-        // 3. Handle Empty State
-        // If total is 0 and inputs are empty, show "--"
         if (totalMinutes === 0 && !this.dom.sleep.value && !this.dom.wake.value && !napHours) {
             this.dom.display.value = "--";
             return;
         }
 
-        // 4. Format and Display
         const hours = Math.floor(totalMinutes / 60);
         const minutes = Math.round(totalMinutes % 60);
         this.dom.display.value = `${hours} hr ${minutes} min`;
@@ -154,7 +148,6 @@ class SleepModule {
 /**
  * ==========================================
  * UI MODULE: DAILY LOG FORM
- * Handles AutoSave, Emoji Picking, and Dynamic Highlights
  * ==========================================
  */
 class DailyLogForm {
@@ -163,14 +156,10 @@ class DailyLogForm {
         
         if (!this.form) return;
 
-        // State for locking
         this.isSaving = false;
         this.pendingSave = false;
-
-        // Store the specific status element that requested the save
         this.pendingStatusEl = null;
 
-        // Debounce passing arguments correctly
         this.debouncedSave = this.debounce((statusEl) => this.performSave(statusEl), 1000);
         
         this.initAutoSave();
@@ -187,18 +176,14 @@ class DailyLogForm {
         };
     }
 
-    // --- Auto Save Logic ---
     initAutoSave() {
-        // Helper to find the correct status element based on the event target
         const getStatusElement = (target) => {
             const section = target.closest('.js-autosave-section');
-            // Fallback to global ID if section not found or section has no status
             return (section && section.querySelector('.js-section-status')) 
                    || document.getElementById('global-save-status')
-                   || document.getElementById('save-status'); // Legacy fallback
+                   || document.getElementById('save-status');
         };
 
-        // Text Inputs: Debounce
         this.form.addEventListener('input', (e) => {
             if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                 const statusEl = getStatusElement(e.target);
@@ -206,7 +191,6 @@ class DailyLogForm {
             }
         });
 
-        // Choices: Immediate
         this.form.addEventListener('change', (e) => {
             if (['radio', 'checkbox'].includes(e.target.type) || e.target.tagName === 'SELECT' || e.target.type === 'time') {
                 const statusEl = getStatusElement(e.target);
@@ -216,20 +200,15 @@ class DailyLogForm {
     }
 
     async performSave(statusEl) {
-        // LOCK CHECK: If already saving, queue a retry and exit
         if (this.isSaving) {
             this.pendingSave = true;
-            // Update the pending status element so the retry highlights the latest edit
             if (statusEl) this.pendingStatusEl = statusEl;
             return;
         }
 
-        // SET LOCK
         this.isSaving = true;
-
-        // Use the passed element, or if coming from pending queue, use the stored one
         const currentStatusEl = statusEl || this.pendingStatusEl;
-        this.pendingStatusEl = null; // Reset pending target
+        this.pendingStatusEl = null;
 
         this.updateStatus(currentStatusEl, "Saving...", "text-secondary");
 
@@ -238,7 +217,6 @@ class DailyLogForm {
             if (data.status === 'success') {
                 this.updateStatus(currentStatusEl, "Saved", "text-success");
 
-                // Sync backend IDs to frontend to prevent duplicates on next save
                 if (data.new_ids) {
                     Object.entries(data.new_ids).forEach(([inputName, newId]) => {
                         const idInput = this.form.querySelector(`input[name="${inputName}"]`);
@@ -248,17 +226,12 @@ class DailyLogForm {
                     });
                 }
 
-                // Update INITIAL_FORMS Counters
-                // This tells Django that these rows are now "Existing" records,
-                // preventing it from creating duplicates on the next save.
                 ['pos', 'neg'].forEach(prefix => {
                     const initialInput = document.getElementById(`id_${prefix}-INITIAL_FORMS`);
                     if (initialInput) {
-                        // Count how many rows now have a valid database ID
                         const validIds = Array.from(
                             this.form.querySelectorAll(`input[name^="${prefix}-"][name$="-id"]`)
                         ).filter(input => input.value !== "").length;
-                        
                         initialInput.value = validIds;
                     }
                 });
@@ -271,12 +244,10 @@ class DailyLogForm {
             console.error(error);
             this.updateStatus(currentStatusEl, "Offline", "text-danger");
         } finally {
-            // RELEASE LOCK & HANDLE QUEUE
             this.isSaving = false;
             
             if (this.pendingSave) {
                 this.pendingSave = false;
-                // Recursive call to handle the edits made while we were saving
                 this.performSave(this.pendingStatusEl); 
             }
         }
@@ -288,7 +259,6 @@ class DailyLogForm {
         element.className = `js-section-status small fw-bold text-uppercase transition-all ${colorClass}`;
     }
 
-    // --- Emoji Picker ---
     initEmojiPicker() {
         const input = document.getElementById('mood-picker-input');
         const slot = document.getElementById('mood-slot-container');
@@ -309,8 +279,6 @@ class DailyLogForm {
             input.value = e.detail.unicode;
             popover.style.display = 'none';
             slot.classList.add('has-mood');
-            
-            // Fix: Pass status element for immediate save
             const statusEl = slot.closest('.js-autosave-section')?.querySelector('.js-section-status');
             this.performSave(statusEl); 
         });
@@ -324,7 +292,6 @@ class DailyLogForm {
         if (input.value) slot.classList.add('has-mood');
     }
 
-    // --- Score Bar ---
     initScoreBar() {
         const container = document.getElementById('score-container');
         if (!container) return;
@@ -341,7 +308,6 @@ class DailyLogForm {
         updateVisuals();
     }
 
-    // --- Dynamic Highlights (Add/Delete Rows) ---
     initDynamicRows() {
         this.form.addEventListener('click', (e) => {
             const addBtn = e.target.closest('[data-add-row]');
@@ -353,7 +319,6 @@ class DailyLogForm {
                 row.querySelector('input[name$="-DELETE"]').checked = true;
                 row.style.display = 'none';
                 
-                // Fix: Pass status element for immediate save
                 const statusEl = row.closest('.js-autosave-section')?.querySelector('.js-section-status');
                 this.performSave(statusEl);
             }
@@ -379,31 +344,24 @@ class DailyLogForm {
 
 /**
  * ==========================================
- * UI MODULE: TASK MANAGER (NEW)
+ * UI MODULE: TASK MANAGER
  * Handles Creation, Archive, and Rendering
  * ==========================================
  */
 class TaskManager {
     constructor() {
         this.dom = {
-            list: document.getElementById('gate-task-list'),
+            list: document.getElementById('pending-tasks-list'),
             form: document.getElementById('gate-add-task-form'),
             modalEl: document.getElementById('taskModal'),
         };
 
-        // Initialize Bootstrap Modal Wrapper
         if (this.dom.modalEl) {
             this.modal = new bootstrap.Modal(this.dom.modalEl);
             this.initCreator();
         }
-
-        // Initialize Archive Listeners
-        if (this.dom.list) {
-            this.initArchiver();
-        }
     }
 
-    // --- Task Creation ---
     initCreator() {
         const saveBtn = this.dom.modalEl.querySelector('.btn-primary');
         if (saveBtn) {
@@ -412,7 +370,6 @@ class TaskManager {
     }
 
     async handleCreate() {
-        // Sync TinyMCE if present
         if (typeof tinymce !== 'undefined') tinymce.triggerSave();
 
         const formData = new FormData(this.dom.form);
@@ -437,9 +394,11 @@ class TaskManager {
         if (!this.dom.list) return;
 
         // Remove "No active tasks" message if it exists
-        const emptyMsg = this.dom.list.querySelector('.text-center');
+        const emptyMsg = this.dom.list.querySelector('.empty-msg');
         if (emptyMsg) emptyMsg.remove();
 
+        // FIX 1: Rank formatting to match template ("E" -> "E-Rank")
+        // FIX 2: Added onclick="archiveTask..." for immediate deletion support
         const html = `
             <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-${task.id}">
                 <div class="d-flex align-items-center">
@@ -448,42 +407,18 @@ class TaskManager {
                            onclick="toggleTask(${task.id})">
                     <div class="ms-2">
                         <div class="fw-bold">${task.title}</div>
-                        <small class="text-muted badge bg-dark">${task.rank}</small>
+                        <small class="text-muted badge bg-dark">${task.rank}-Rank</small>
                     </div>
                 </div>
-                <button class="btn btn-link text-danger p-0 delete-task-btn" data-task-id="${task.id}">
+                <button class="btn btn-link text-danger p-0 delete-task-btn" onclick="archiveTask(${task.id})">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
         `;
         
-        // Append at top or bottom? User preference. Usually top for new things.
-        this.dom.list.insertAdjacentHTML('afterbegin', html);
-    }
-
-    // --- Task Archiving ---
-    initArchiver() {
-        this.dom.list.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.delete-task-btn');
-            if (!btn) return;
-
-            const taskId = btn.dataset.taskId;
-            if (confirm("Are you sure you want to remove this task?")) {
-                await this.handleArchive(taskId);
-            }
-        });
-    }
-
-    async handleArchive(taskId) {
-        try {
-            const data = await GateAPI.archiveTask(taskId);
-            if (data.status === 'success') {
-                const row = document.getElementById(`task-row-${taskId}`);
-                if (row) row.remove();
-            }
-        } catch (error) {
-            console.error(error);
-        }
+        // FIX 3: Changed 'afterbegin' to 'beforeend' 
+        // because backend sorts by created_at ascending (Oldest first), so newest goes last.
+        this.dom.list.insertAdjacentHTML('beforeend', html);
     }
 }
 
@@ -499,21 +434,66 @@ document.addEventListener('DOMContentLoaded', () => {
     new DailyLogForm('dayPageForm');
     new TaskManager();
 
-    // Global helper for Checkboxes (Routines & Tasks)
-    // Must be explicitly attached to window to be accessible by HTML onclick=""
+    // --- GLOBAL ACTIONS ---
+
+    // 1. Toggle Task (Moves between Pending and Done)
     window.toggleTask = async function(itemId) {
         try {
             const data = await GateAPI.toggleTaskStatus(itemId);
             console.log(`Task ${itemId}: ${data.status}`);
             
-            // Optional: Visually strike-through if needed, 
-            // though CSS often handles this via :checked sibling selectors if structured correctly.
-        } catch {
-            // Revert checkbox on failure
+            const row = document.getElementById(`task-row-${itemId}`);
+            if (!row) return;
+
+            const pendingList = document.getElementById('pending-tasks-list');
+            const doneList = document.getElementById('done-tasks-list');
+            const titleEl = row.querySelector('.fw-bold');
+
+            // Logic for Standalone Tasks
+            if (pendingList && doneList && (pendingList.contains(row) || doneList.contains(row))) {
+                if (data.status === 'added') {
+                    // Move to Done
+                    doneList.appendChild(row);
+                    if (titleEl) titleEl.classList.add('text-decoration-line-through');
+                } else {
+                    // Move to Pending
+                    pendingList.appendChild(row);
+                    if (titleEl) titleEl.classList.remove('text-decoration-line-through');
+                }
+
+                // Handle Empty State
+                const emptyMsg = pendingList.querySelector('.empty-msg');
+                const hasTasks = pendingList.querySelectorAll('.task-item').length > 0;
+                
+                if (!hasTasks && !emptyMsg) {
+                    pendingList.insertAdjacentHTML('beforeend', '<div class="text-center text-muted py-3 empty-msg">No active tasks.</div>');
+                } else if (hasTasks && emptyMsg) {
+                    emptyMsg.remove();
+                }
+            }
+            
+        } catch (err) {
+            console.error(err);
+            // Revert checkbox
             const cb = document.querySelector(`input[onclick="toggleTask(${itemId})"]`);
             if (cb) cb.checked = !cb.checked;
         }
     };
+
+    // 2. Archive Task
+    window.archiveTask = async function(taskId) {
+        if (!confirm("Are you sure you want to remove this task?")) return;
+        
+        try {
+            const data = await GateAPI.archiveTask(taskId);
+            if (data.status === 'success') {
+                const row = document.getElementById(`task-row-${taskId}`);
+                if (row) row.remove();
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
 });
 
-})(); // End IIFE
+})();
