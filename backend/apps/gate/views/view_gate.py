@@ -90,7 +90,8 @@ def add_task_view(request):
                 "task": {
                     "id": result.id,
                     "title": result.title,
-                    "rank": result.computed_rank,  # or final_rank
+                    "rank": result.final_rank,
+                    "description": result.description,
                 },
             }
         )

@@ -14,7 +14,16 @@
                        onclick="toggleTask({{ task.id }})">
                 
                 <div class="ms-2">
-                    <div class="fw-bold">{{ task.title }}</div>
+                    <div class="fw-bold"
+                         {% if task.description %}
+                         data-bs-toggle="popover"
+                         data-bs-trigger="hover" 
+                         data-bs-html="true"
+                         data-bs-content="{{ task.description|force_escape }}"
+                         data-bs-placement="top"
+                         {% endif %}>
+                        {{ task.title }}
+                    </div>
                     <small class="text-muted badge bg-dark">{{ task.final_rank }}-Rank</small>
                 </div>
             </div>
@@ -39,7 +48,16 @@
                        onclick="toggleTask({{ task.id }})">
                 
                 <div class="ms-2">
-                    <div class="fw-bold text-decoration-line-through">{{ task.title }}</div>
+                    <div class="fw-bold text-decoration-line-through"
+                         {% if task.description %}
+                         data-bs-toggle="popover"
+                         data-bs-trigger="hover" 
+                         data-bs-html="true"
+                         data-bs-content="{{ task.description|force_escape }}"
+                         data-bs-placement="top"
+                         {% endif %}>
+                        {{ task.title }}
+                    </div>
                     <small class="text-muted badge bg-dark">{{ task.final_rank }}-Rank</small>
                 </div>
             </div>

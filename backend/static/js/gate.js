@@ -397,16 +397,18 @@ class TaskManager {
         const emptyMsg = this.dom.list.querySelector('.empty-msg');
         if (emptyMsg) emptyMsg.remove();
 
-        // FIX 1: Rank formatting to match template ("E" -> "E-Rank")
-        // FIX 2: Added onclick="archiveTask..." for immediate deletion support
-        const html = `
+        // 1. Create a container first to easily access DOM elements
+        const wrapper = document.createElement('div');
+        
+        // 2. Build HTML Structure
+        wrapper.innerHTML = `
             <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-${task.id}">
                 <div class="d-flex align-items-center">
                     <input class="form-check-input me-2" 
                            type="checkbox" 
                            onclick="toggleTask(${task.id})">
                     <div class="ms-2">
-                        <div class="fw-bold">${task.title}</div>
+                        <div class="fw-bold task-title">${task.title}</div>
                         <small class="text-muted badge bg-dark">${task.rank}-Rank</small>
                     </div>
                 </div>
@@ -415,10 +417,22 @@ class TaskManager {
                 </button>
             </div>
         `;
+
+        const row = wrapper.firstElementChild;
         
-        // FIX 3: Changed 'afterbegin' to 'beforeend' 
-        // because backend sorts by created_at ascending (Oldest first), so newest goes last.
-        this.dom.list.insertAdjacentHTML('beforeend', html);
+        // 3. Initialize Popover if description exists
+        if (task.description) {
+            const titleEl = row.querySelector('.task-title');
+            new bootstrap.Popover(titleEl, {
+                content: task.description,
+                html: true,
+                trigger: 'hover',
+                placement: 'top'
+            });
+        }
+        
+        // 4. Append to list
+        this.dom.list.insertAdjacentElement('beforeend', row);
     }
 }
 
@@ -429,6 +443,10 @@ class TaskManager {
  */
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🚀 Gate.js Initialized");
+
+    // Initialize Global Tooltips/Popovers (for server-rendered items)
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+    [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
 
     new SleepModule();
     new DailyLogForm('dayPageForm');
@@ -488,7 +506,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await GateAPI.archiveTask(taskId);
             if (data.status === 'success') {
                 const row = document.getElementById(`task-row-${taskId}`);
-                if (row) row.remove();
+                if (row) {
+                    // Dispose popover before removing to avoid memory leaks
+                    const titleEl = row.querySelector('[data-bs-toggle="popover"]');
+                    if (titleEl) {
+                        const popover = bootstrap.Popover.getInstance(titleEl);
+                        if (popover) popover.dispose();
+                    }
+                    row.remove();
+                }
             }
         } catch (error) {
             console.error(error);
