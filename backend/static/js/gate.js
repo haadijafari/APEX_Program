@@ -342,17 +342,20 @@
     class TaskManager {
         constructor() {
             this.dom = {
-                list: document.getElementById('pending-tasks-list'),
+                listPending: document.getElementById('pending-tasks-list'),
+                listDone: document.getElementById('done-tasks-list'),
                 form: document.getElementById('gate-add-task-form'),
                 modalEl: document.getElementById('taskModal'),
                 saveBtn: document.getElementById('btn-save-task'),
                 modalTitle: document.getElementById('taskModalTitle'),
-                hiddenId: document.getElementById('task-id-hidden')
+                hiddenId: document.getElementById('task-id-hidden'),
+                addBtn: document.getElementById('btn-open-create-task')
             };
 
             if (this.dom.modalEl) {
                 this.modal = bootstrap.Modal.getOrCreateInstance(this.dom.modalEl);
                 this.initSaver();
+                this.initEventListeners();
             }
         }
 
@@ -365,6 +368,51 @@
             this.dom.saveBtn = newBtn;
             
             this.dom.saveBtn.addEventListener('click', () => this.handleSave());
+        }
+
+        /**
+         * Initialize Event Delegation
+         * Listens for clicks/changes on the list containers instead of individual items.
+         */
+        initEventListeners() {
+            // Listen for Modal Open to reset form
+            if (this.dom.modalEl) {
+                this.dom.modalEl.addEventListener('show.bs.modal', (event) => {
+                    // Only reset if the trigger was the "Add" button, not an "Edit" click
+                    if (event.relatedTarget && event.relatedTarget.id === 'btn-open-create-task') {
+                        this.resetForm();
+                    }
+                });
+            }
+
+            // Bind Delegation to both lists
+            [this.dom.listPending, this.dom.listDone].forEach(list => {
+                if (!list) return;
+
+                // Handle Clicks (Edit, Archive)
+                list.addEventListener('click', (e) => {
+                    // 1. Edit Click
+                    const editTarget = e.target.closest('.js-task-edit');
+                    if (editTarget) {
+                        this.openEditor(editTarget.dataset.taskId);
+                        return;
+                    }
+
+                    // 2. Archive Click
+                    const archiveTarget = e.target.closest('.js-task-archive');
+                    if (archiveTarget) {
+                        this.handleArchive(archiveTarget.dataset.taskId);
+                    }
+                });
+
+                // Handle Changes (Toggle Checkbox)
+                list.addEventListener('change', (e) => {
+                    const toggleTarget = e.target.closest('.js-task-toggle');
+                    if (toggleTarget) {
+                        this.handleToggle(toggleTarget.dataset.taskId, toggleTarget);
+                    }
+                });
+            });
         }
 
         resetForm() {
@@ -381,6 +429,7 @@
         }
 
         openCreator() {
+            // Logic handled by modal event listener, but kept for manual calls if needed
             this.resetForm();
             this.modal.show();
         }
@@ -447,6 +496,59 @@
             }
         }
 
+        async handleToggle(itemId, checkboxEl) {
+            try {
+                const data = await GateAPI.toggleTaskStatus(itemId);
+                const row = document.getElementById(`task-row-${itemId}`);
+                if (!row) return;
+
+                // Determine movement
+                const targetList = (data.status === 'added') ? this.dom.listDone : this.dom.listPending;
+                const titleEl = row.querySelector('.fw-bold');
+
+                if (targetList) {
+                    targetList.appendChild(row);
+                    titleEl?.classList.toggle('text-decoration-line-through', data.status === 'added');
+                }
+                
+                this.updateEmptyState();
+
+            } catch (err) {
+                // Revert checkbox on failure
+                if (checkboxEl) checkboxEl.checked = !checkboxEl.checked;
+                console.error("Toggle failed", err);
+            }
+        }
+
+        async handleArchive(taskId) {
+            if (!confirm("Are you sure you want to remove this task?")) return;
+            try {
+                const data = await GateAPI.archiveTask(taskId);
+                if (data.status === 'success') {
+                    const row = document.getElementById(`task-row-${taskId}`);
+                    // Dispose popover to prevent memory leaks
+                    const titleEl = row?.querySelector('[data-bs-toggle="popover"]');
+                    if (titleEl) bootstrap.Popover.getInstance(titleEl)?.dispose();
+                    row?.remove();
+                    this.updateEmptyState();
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        updateEmptyState() {
+            if (!this.dom.listPending) return;
+            const hasTasks = this.dom.listPending.querySelectorAll('.task-item').length > 0;
+            const emptyMsg = this.dom.listPending.querySelector('.empty-msg');
+            
+            if (!hasTasks && !emptyMsg) {
+                this.dom.listPending.insertAdjacentHTML('beforeend', '<div class="text-center text-muted py-3 empty-msg">No active tasks.</div>');
+            } else if (hasTasks && emptyMsg) {
+                emptyMsg.remove();
+            }
+        }
+
         // --- UI Updates ---
         updateTaskInUI(task) {
             const row = document.getElementById(`task-row-${task.id}`);
@@ -471,22 +573,23 @@
         }
 
         appendTaskToUI(task) {
-            if (!this.dom.list) return;
-            const emptyMsg = this.dom.list.querySelector('.empty-msg');
+            if (!this.dom.listPending) return;
+            const emptyMsg = this.dom.listPending.querySelector('.empty-msg');
             if (emptyMsg) emptyMsg.remove();
 
             const wrapper = document.createElement('div');
             // Using a template literal for cleanliness
+            // Updated to use data attributes instead of onclick
             wrapper.innerHTML = `
                 <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-${task.id}">
                     <div class="d-flex align-items-center">
-                        <input class="form-check-input me-2" type="checkbox" onclick="toggleTask(${task.id})">
-                        <div class="ms-2" onclick="editTask(${task.id})" style="cursor: pointer;">
+                        <input class="form-check-input me-2 js-task-toggle" type="checkbox" data-task-id="${task.id}">
+                        <div class="ms-2 task-title-interactive js-task-edit" data-task-id="${task.id}">
                             <div class="fw-bold task-title">${task.title}</div>
                             <small class="text-muted badge bg-dark">${task.rank}-Rank</small>
                         </div>
                     </div>
-                    <button class="btn btn-link text-danger p-0 delete-task-btn" onclick="archiveTask(${task.id})">
+                    <button class="btn btn-link text-danger p-0 delete-task-btn js-task-archive" data-task-id="${task.id}">
                         <i class="bi bi-x"></i>
                     </button>
                 </div>
@@ -498,7 +601,7 @@
                     content: task.description, html: true, trigger: 'hover', placement: 'top'
                 });
             }
-            this.dom.list.insertAdjacentElement('beforeend', row);
+            this.dom.listPending.insertAdjacentElement('beforeend', row);
         }
     }
 
@@ -517,68 +620,7 @@
         // Init Modules
         new SleepModule();
         new DailyLogForm('dayPageForm');
-        const taskManager = new TaskManager();
-
-        /**
-         * GLOBAL EXPORTS
-         * These are required because HTML 'onclick' attributes reference them.
-         */
-        
-        window.toggleTask = async function(itemId) {
-            try {
-                const data = await GateAPI.toggleTaskStatus(itemId);
-                const row = document.getElementById(`task-row-${itemId}`);
-                if (!row) return;
-
-                const lists = {
-                    pending: document.getElementById('pending-tasks-list'),
-                    done: document.getElementById('done-tasks-list')
-                };
-                
-                // Determine movement
-                const targetList = (data.status === 'added') ? lists.done : lists.pending;
-                const titleEl = row.querySelector('.fw-bold');
-
-                if (targetList) {
-                    targetList.appendChild(row);
-                    titleEl?.classList.toggle('text-decoration-line-through', data.status === 'added');
-                }
-                
-                // Toggle Empty Messages
-                if (lists.pending) {
-                    const hasTasks = lists.pending.querySelectorAll('.task-item').length > 0;
-                    const emptyMsg = lists.pending.querySelector('.empty-msg');
-                    if (!hasTasks && !emptyMsg) {
-                        lists.pending.insertAdjacentHTML('beforeend', '<div class="text-center text-muted py-3 empty-msg">No active tasks.</div>');
-                    } else if (hasTasks && emptyMsg) {
-                        emptyMsg.remove();
-                    }
-                }
-            } catch (err) {
-                // Revert checkbox on failure
-                const cb = document.querySelector(`input[onclick="toggleTask(${itemId})"]`);
-                if (cb) cb.checked = !cb.checked;
-            }
-        };
-
-        window.archiveTask = async function(taskId) {
-            if (!confirm("Are you sure you want to remove this task?")) return;
-            try {
-                const data = await GateAPI.archiveTask(taskId);
-                if (data.status === 'success') {
-                    const row = document.getElementById(`task-row-${taskId}`);
-                    // Dispose popover to prevent memory leaks
-                    const titleEl = row?.querySelector('[data-bs-toggle="popover"]');
-                    if (titleEl) bootstrap.Popover.getInstance(titleEl)?.dispose();
-                    row?.remove();
-                }
-            } catch (error) {
-                console.error(error);
-            }
-        };
-
-        window.editTask = (taskId) => taskManager.openEditor(taskId);
-        window.initCreateTask = () => taskManager.openCreator();
+        new TaskManager(); // Logic is now self-contained
     });
 
 })();

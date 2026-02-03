@@ -1,6 +1,6 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="text-muted mb-0">Tasks</h4>
-    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#taskModal">
+    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-open-create-task" data-bs-toggle="modal" data-bs-target="#taskModal">
         <i class="bi bi-plus-lg task-add-btn-icon"></i>
     </button>
 </div>
@@ -9,11 +9,11 @@
     {% for task in tasks %}
         <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-{{ task.id }}">
             <div class="d-flex align-items-center">
-                <input class="form-check-input me-2" 
+                <input class="form-check-input me-2 js-task-toggle" 
                        type="checkbox" 
-                       onclick="toggleTask({{ task.id }})">
+                       data-task-id="{{ task.id }}">
                 
-                <div class="ms-2 task-title-interactive" onclick="editTask({{ task.id }})">
+                <div class="ms-2 task-title-interactive js-task-edit" data-task-id="{{ task.id }}">
                     <div class="fw-bold"
                          {% if task.description %}
                          data-bs-toggle="popover"
@@ -28,7 +28,7 @@
                 </div>
             </div>
             
-            <button class="btn btn-link text-danger p-0 delete-task-btn" onclick="archiveTask({{ task.id }})">
+            <button class="btn btn-link text-danger p-0 delete-task-btn js-task-archive" data-task-id="{{ task.id }}">
                 <i class="bi bi-x"></i>
             </button>
         </div>
@@ -42,10 +42,10 @@
     {% for task in done_tasks %}
         <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-{{ task.id }}">
             <div class="d-flex align-items-center">
-                <input class="form-check-input me-2" 
+                <input class="form-check-input me-2 js-task-toggle" 
                        type="checkbox" 
                        checked
-                       onclick="toggleTask({{ task.id }})">
+                       data-task-id="{{ task.id }}">
                 
                 <div class="ms-2">
                     <div class="fw-bold text-decoration-line-through"
@@ -62,7 +62,7 @@
                 </div>
             </div>
             
-            <button class="btn btn-link text-danger p-0 delete-task-btn" onclick="archiveTask({{ task.id }})">
+            <button class="btn btn-link text-danger p-0 delete-task-btn js-task-archive" data-task-id="{{ task.id }}">
                 <i class="bi bi-x"></i>
             </button>
         </div>
