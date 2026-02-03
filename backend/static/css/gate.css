@@ -202,11 +202,51 @@ emoji-picker {
 }
 
 /* =========================================
-   4. HELPERS
+   4. FORM UTILITIES & HELPERS
    ========================================= */
 
-/* Table Delete Button (X) */
+/* Prevent accidental form submission via Enter key */
+#dayPageForm button[type="submit"],
+#dayPageForm input[type="submit"] { 
+    display: none !important; 
+}
+
+/* Auto-save status alignment */
+.js-section-status { 
+    min-width: 50px; 
+    display: inline-block; 
+    text-align: right; 
+}
+
+/* Small "ADD" text buttons */
+.btn-add-row {
+    font-size: 0.75rem !important;
+}
+
+/* Delete button styles */
 .btn-delete-row:hover {
     opacity: 1 !important;
     color: #ff0000 !important;
+}
+
+/* Faded delete button for empty form templates */
+.btn-delete-template {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.btn-delete-template:hover {
+    opacity: 1;
+}
+
+/* --- TASK LIST HELPERS --- */
+
+/* Bold stroke for the "Add Task" plus icon */
+.task-add-btn-icon {
+    -webkit-text-stroke: 1px;
+}
+
+/* Interactive cursor for task titles */
+.task-title-interactive {
+    cursor: pointer;
 }

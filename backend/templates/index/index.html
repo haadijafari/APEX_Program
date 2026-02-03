@@ -32,9 +32,9 @@
                     <table class="table table-dark table-borderless table-sm mb-0 text-center align-middle habit-tracker-table">
                         <thead>
                             <tr>
-                                <th class="text-start ps-3 text-muted" style="min-width: 150px;">Habit</th>
+                                <th class="text-start ps-3 text-muted habit-header-title">Habit</th>
                                 {% for day in month_days %}
-                                    <th class="small {% if day == current_day_number %}text-system fw-bold{% else %}text-secondary fw-light{% endif %}" style="width: 28px;">{{ day }}</th>
+                                    <th class="small habit-header-day {% if day == current_day_number %}text-system fw-bold{% else %}text-secondary fw-light{% endif %}">{{ day }}</th>
                                 {% endfor %}
                             </tr>
                         </thead>
@@ -43,7 +43,7 @@
                             <tr>
                                 <td class="text-start ps-3 fw-bold text-light">{{ habit.title }}</td>
                                 {% for cell in habit.status %}
-                                    <td style="cursor: pointer;" 
+                                    <td class="habit-cell-interactive" 
                                         onclick="toggleHabit({{ habit.id }}, '{{ cell.date }}', this, {{ forloop.counter0 }})"
                                         title="Toggle status for {{ cell.date }}">
                                         
@@ -82,7 +82,7 @@
                     <span class="text-secondary text-uppercase small ls-1">Sleep Rhythm</span>
                 </div>
                 <div class="card-body">
-                    <div style="height: 250px;">
+                    <div class="dashboard-chart-wrapper">
                         <canvas id="sleepChart"></canvas>
                     </div>
                 </div>
@@ -95,7 +95,7 @@
                     <span class="text-secondary text-uppercase small ls-1">Daily Discipline</span>
                 </div>
                 <div class="card-body">
-                    <div style="height: 250px;">
+                    <div class="dashboard-chart-wrapper">
                         <canvas id="habitCountChart"></canvas>
                     </div>
                 </div>

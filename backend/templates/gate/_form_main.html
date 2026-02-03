@@ -3,12 +3,6 @@
 
     <input type="hidden" name="date" value="{{ today|date:'Y-m-d' }}">
     
-    <style>
-        #dayPageForm button[type="submit"],
-        #dayPageForm input[type="submit"] { display: none !important; }
-        .js-section-status { min-width: 50px; display: inline-block; text-align: right; }
-    </style>
-
     <div class="d-flex justify-content-between align-items-center mb-3">
         <span class="text-secondary small fw-bold text-uppercase ls-1">Daily Log</span>
         <span id="global-save-status" class="small fw-bold text-uppercase transition-all"></span>
@@ -109,8 +103,8 @@
                 <label class="form-label fw-bold text-success small text-uppercase d-flex justify-content-between align-items-center">
                     <span>Positive Highlights</span>
                     <div class="d-flex align-items-center">
-                        <button type="button" class="btn btn-sm btn-link text-success p-0 text-decoration-none fw-bold" 
-                                data-add-row="true" data-prefix="pos" style="font-size: 0.75rem;">+ ADD</button>
+                        <button type="button" class="btn btn-sm btn-link text-success p-0 text-decoration-none fw-bold btn-add-row" 
+                                data-add-row="true" data-prefix="pos">+ ADD</button>
                     </div>
                 </label>
                 <div id="pos-container">
@@ -132,8 +126,8 @@
                         <input type="hidden" name="pos-__prefix__-category" value="POS">
                         {{ pos_formset.empty_form.content }}
                         
-                        <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none" 
-                                title="Delete" style="opacity: 0.6; transition: opacity 0.2s;">
+                        <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none btn-delete-template" 
+                                title="Delete">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -149,8 +143,8 @@
                 <label class="form-label fw-bold text-danger small text-uppercase d-flex justify-content-between align-items-center">
                     <span>Areas to Improve</span>
                     <div class="d-flex align-items-center"> 
-                        <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-bold" 
-                                data-add-row="true" data-prefix="neg" style="font-size: 0.75rem;">+ ADD</button>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none fw-bold btn-add-row" 
+                                data-add-row="true" data-prefix="neg">+ ADD</button>
                     </div>
                 </label>
                 <div id="neg-container">
@@ -172,8 +166,8 @@
                         <input type="hidden" name="neg-__prefix__-category" value="NEG">
                         {{ neg_formset.empty_form.content }}
                         
-                        <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none" 
-                                title="Delete" style="opacity: 0.6; transition: opacity 0.2s;">
+                        <button type="button" class="btn btn-link text-secondary p-0 ms-2 btn-delete-row text-decoration-none btn-delete-template" 
+                                title="Delete">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>

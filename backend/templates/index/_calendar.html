@@ -17,10 +17,10 @@
 
         <div class="d-flex flex-wrap text-center">
             {% for day_info in calendar_days %}
-                <div style="width: 14.28%; height: 50px; padding: 2px;">
+                <div class="calendar-cell-wrapper">
                     {% if day_info %}
                         <a href="{% url 'gate:gate_date' day_info.full_date %}" class="text-decoration-none d-block h-100">
-                            <div class="h-100 rounded d-flex flex-column justify-content-center align-items-center position-relative transition-all
+                            <div class="h-100 rounded d-flex flex-column justify-content-center align-items-center position-relative transition-all calendar-day-box
                                 {% if day_info.has_log %}
                                     bg-success text-white
                                 {% elif day_info.is_today %}
@@ -30,7 +30,6 @@
                                 {% else %}
                                     bg-dark text-secondary border border-secondary
                                 {% endif %}"
-                                style="cursor: pointer;"
                             >
                                 <span class="small fw-bold">{{ day_info.day }}</span>
                             </div>

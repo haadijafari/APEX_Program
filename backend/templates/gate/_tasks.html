@@ -1,7 +1,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="text-muted mb-0">Tasks</h4>
     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#taskModal">
-        <i class="bi bi-plus-lg" style="-webkit-text-stroke: 1px;"></i>
+        <i class="bi bi-plus-lg task-add-btn-icon"></i>
     </button>
 </div>
 
@@ -13,7 +13,7 @@
                        type="checkbox" 
                        onclick="toggleTask({{ task.id }})">
                 
-                <div class="ms-2" onclick="editTask({{ task.id }})" style="cursor: pointer;">
+                <div class="ms-2 task-title-interactive" onclick="editTask({{ task.id }})">
                     <div class="fw-bold"
                          {% if task.description %}
                          data-bs-toggle="popover"
