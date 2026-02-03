@@ -11,6 +11,33 @@
      * ==========================================
      */
     class GateAPI {
+        // 1. Load Configuration
+        static get config() {
+            if (this._config) return this._config;
+            const el = document.getElementById('gate-api-config');
+            try {
+                this._config = el ? JSON.parse(el.textContent) : {};
+            } catch (e) {
+                console.error("Failed to parse API config:", e);
+                this._config = {};
+            }
+            return this._config;
+        }
+
+        // 2. Helper to Build URLs
+        static getUrl(name, id = null) {
+            let url = this.config[name];
+            if (!url) {
+                console.error(`URL for '${name}' not found in config.`);
+                return '';
+            }
+            // Replace the dummy '0' ID with the actual ID
+            if (id !== null) {
+                url = url.replace('0', id);
+            }
+            return url;
+        }
+
         static getCookie(name) {
             if (!document.cookie) return null;
             const cookie = document.cookie
@@ -26,13 +53,9 @@
             };
         }
 
-        /**
-         * Generic Fetch Wrapper
-         * @param {string} url 
-         * @param {string} method 
-         * @param {FormData|null} body 
-         */
         static async request(url, method = 'GET', body = null) {
+            if (!url) throw new Error("Invalid API URL");
+            
             const options = { method, headers: this.headers };
             if (body) options.body = body;
 
@@ -46,29 +69,31 @@
         }
 
         // --- Endpoints ---
+
         static autoSave(formElement) {
+            // Keep existing data-attribute logic for autosave as it's specific to the form
             const url = formElement.dataset.autosaveUrl || "/gate/autosave/";
             return this.request(url, 'POST', new FormData(formElement));
         }
 
         static toggleTaskStatus(taskId) {
-            return this.request(`/task/toggle/${taskId}/`, 'POST');
+            return this.request(this.getUrl('taskToggle', taskId), 'POST');
         }
 
         static createTask(formData) {
-            return this.request("/task/add/", 'POST', formData);
+            return this.request(this.getUrl('taskAdd'), 'POST', formData);
         }
 
         static getTaskDetails(taskId) {
-            return this.request(`/task/${taskId}/details/`, 'GET');
+            return this.request(this.getUrl('taskDetails', taskId), 'GET');
         }
 
         static updateTask(taskId, formData) {
-            return this.request(`/task/${taskId}/update/`, 'POST', formData);
+            return this.request(this.getUrl('taskUpdate', taskId), 'POST', formData);
         }
 
         static archiveTask(taskId) {
-            return this.request(`/task/${taskId}/archive/`, 'POST');
+            return this.request(this.getUrl('taskArchive', taskId), 'POST');
         }
     }
 
