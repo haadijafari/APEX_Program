@@ -1,6 +1,7 @@
 /* ==========================================================================
    FILE: main.css
    DESCRIPTION: Global theme variables, Bootstrap overrides, and utilities.
+   MAINTENANCE: Define all colors here. Do not hardcode hex values in other files.
    DEPENDENCIES: Bootstrap 5
    ========================================================================== */
 
@@ -9,22 +10,31 @@
        1. THEME CONFIGURATION
        ---------------------------------------------------------------------- */
     
-    /* Primary Accent Color ("The Glow") */
+    /* -- Primary Brand Color ("The Glow") -- */
     /* Default: Solo Leveling Blue (#00a8ff) */
     --apex-primary: #00a8ff;
-    
-    /* RGB tuple required for rgba() opacity manipulations (e.g., backgrounds) */
-    /* NOTE: If you change --apex-primary, update these numbers to match */
-    --apex-primary-rgb: 0, 168, 255; 
+    --apex-primary-rgb: 0, 168, 255; /* Required for rgba() opacity layers */
 
-    /* Background Hierarchy */
-    --apex-bg-dark: #121212;      /* Base/Body background */
-    --apex-bg-card: #1e1e1e;      /* Surface/Card background */
+    /* -- Semantic State Colors -- */
+    /* specific overrides for this theme to match the dark aesthetic */
+    --apex-danger: #dc3545;       /* Red: Low Scores, Errors */
+    --apex-danger-rgb: 220, 53, 69;
+    
+    --apex-warning: #ffc107;      /* Yellow: Medium Scores, Alerts */
+    --apex-warning-rgb: 255, 193, 7;
+    
+    --apex-success: #198754;      /* Green: High Scores, Success */
+    --apex-success-rgb: 25, 135, 84;
+
+    /* -- Background Hierarchy -- */
+    --apex-bg-dark: #121212;      /* L1: Base Body Background */
+    --apex-bg-card: #1e1e1e;      /* L2: Card/Surface Background */
+    --apex-bg-input: #2c2c2c;     /* L3: Inputs/Interactive Areas */
     --apex-border: #333333;       /* Neutral border color */
 
     /* ----------------------------------------------------------------------
        2. BOOTSTRAP OVERRIDES
-       Mapping system variables to Bootstrap's CSS custom properties
+       Mapping system variables to Bootstrap's CSS custom properties.
        ---------------------------------------------------------------------- */
     --bs-body-bg: var(--apex-bg-dark);
     --bs-body-color: #e0e0e0;             /* High contrast text for dark mode */
@@ -34,33 +44,28 @@
 
 /* ==========================================================================
    UTILITY CLASSES
-   Helpers for applying theme colors directly in HTML
+   Helpers for applying theme colors directly in HTML.
    ========================================================================== */
 
-/* Apply primary color to text */
-.text-system { 
-    color: var(--apex-primary) !important; 
-}
+/* Text Colors */
+.text-system { color: var(--apex-primary) !important; }
 
-/* Apply primary color to background with readable text */
+/* Backgrounds */
 .bg-system { 
     background-color: var(--apex-primary) !important; 
     color: #fff; 
 }
-
-/* Apply primary color to borders */
-.border-system { 
-    border-color: var(--apex-primary) !important; 
-}
-
-/* Transparent tint of the primary color (useful for active states/badges) */
 .bg-system-soft {
+    /* Useful for active states/badges requiring transparency */
     background-color: rgba(var(--apex-primary-rgb), 0.15) !important;
 }
 
+/* Borders */
+.border-system { border-color: var(--apex-primary) !important; }
+
 /* ==========================================================================
    COMPONENT STYLES
-   Global overrides for specific UI elements
+   Global overrides for specific UI elements.
    ========================================================================== */
 
 /* 1. CARDS */
@@ -68,29 +73,23 @@
     transition: transform 0.2s ease, border-color 0.2s ease;
     border: 1px solid var(--apex-border);
 }
-
 .card:hover {
     transform: translateY(-2px);
     border-color: #555;
 }
 
-/* 2. NAVBAR  */
+/* 2. NAVBAR */
 .navbar {
     background-color: var(--apex-bg-card) !important;
     border-bottom: 1px solid var(--apex-border);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
+.badge-version { font-size: 0.7rem; }
 
-/* New class for the version badge */
-.badge-version {
-    font-size: 0.7rem;
-}
-
-/* 3. FORM CONTROLS
-   Dark mode overrides for inputs and selects */
+/* 3. FORM CONTROLS (Dark Mode) */
 .form-control, 
 .form-select {
-    background-color: #2c2c2c;
+    background-color: var(--apex-bg-input);
     border-color: var(--apex-border);
     color: #fff;
 }
@@ -98,17 +97,13 @@
 /* Focus state: Glow effect using primary color */
 .form-control:focus, 
 .form-select:focus {
-    background-color: #2c2c2c;
+    background-color: var(--apex-bg-input);
     border-color: var(--apex-primary);
     box-shadow: 0 0 0 0.25rem rgba(var(--apex-primary-rgb), 0.25);
     color: #fff;
 }
 
-/* =========================================
-   4. AUTH PAGES
-   ========================================= */
-
-/* Login/Register card centering and sizing */
+/* 4. AUTH PAGES */
 .auth-card {
     max-width: 400px;
     width: 100%;

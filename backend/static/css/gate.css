@@ -5,6 +5,7 @@
      1. Score System (Energy Bar)
      2. Mood Slot (Inventory Box)
      3. Emoji Picker (Popover)
+     4. Form Utilities
    ========================================================================== */
 
 /* =========================================
@@ -13,18 +14,16 @@
 
 .system-score-container {
     display: flex;
-    gap: 2px; /* Tight spacing creates the 'bar' visual */
+    gap: 2px;
     width: 100%;
-    background: #111;
+    background: var(--apex-bg-dark); /* Use variable */
     padding: 4px;
     border-radius: 8px;
-    border: 1px solid #333;
+    border: 1px solid var(--apex-border);
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
 }
 
-/* HIDE DEFAULT RADIO BUTTONS
-   We hide the actual input elements and style the <label> instead.
-   Using !important to ensure no browser default styles leak through. */
+/* HIDE DEFAULT RADIO BUTTONS (Accessibility hidden) */
 .system-score-container input[type="radio"] {
     display: none !important;
     opacity: 0 !important;
@@ -43,12 +42,12 @@
     text-align: center;
     padding: 10px 0;
     
-    background-color: #1a1a1a;
+    background-color: #1a1a1a; /* Specific shade for unselected segments */
     border: 1px solid #2a2a2a;
     color: #444; /* Dim text indicates inactive state */
     
     cursor: pointer;
-    font-family: 'Segoe UI', monospace; /* Monospace for 'Tech' feel */
+    font-family: 'Segoe UI', monospace; /* Tech/System feel */
     font-weight: 800;
     font-size: 1rem;
     border-radius: 2px;
@@ -64,14 +63,15 @@
     transform: translateY(-1px);
 }
 
-/* ACTIVE STATE: General High Score (8-10)
-   Default Blue/System color glow */
+/* --- ACTIVE STATES --- */
+
+/* HIGH SCORE (8-10): System Blue */
 .score-label.is-active {
-    background: linear-gradient(180deg, rgba(13, 110, 253, 0.2) 0%, rgba(13, 110, 253, 0.1) 100%);
-    border-color: var(--apex-primary, #0d6efd);
+    background: linear-gradient(180deg, rgba(var(--apex-primary-rgb), 0.2) 0%, rgba(var(--apex-primary-rgb), 0.1) 100%);
+    border-color: var(--apex-primary);
     color: #fff;
-    box-shadow: 0 0 10px rgba(13, 110, 253, 0.3), inset 0 0 5px rgba(13, 110, 253, 0.2);
-    text-shadow: 0 0 5px rgba(13, 110, 253, 0.8);
+    box-shadow: 0 0 10px rgba(var(--apex-primary-rgb), 0.3), inset 0 0 5px rgba(var(--apex-primary-rgb), 0.2);
+    text-shadow: 0 0 5px rgba(var(--apex-primary-rgb), 0.8);
 }
 
 /* LOW SCORE (1-4): Red Danger Warning */
@@ -79,21 +79,21 @@
 .score-label.is-active[data-value="2"],
 .score-label.is-active[data-value="3"],
 .score-label.is-active[data-value="4"] {
-    border-color: #dc3545;
-    background: linear-gradient(180deg, rgba(220, 53, 69, 0.2) 0%, rgba(220, 53, 69, 0.1) 100%);
-    box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
-    text-shadow: 0 0 5px rgba(220, 53, 69, 0.8);
+    border-color: var(--apex-danger);
+    background: linear-gradient(180deg, rgba(var(--apex-danger-rgb), 0.2) 0%, rgba(var(--apex-danger-rgb), 0.1) 100%);
+    box-shadow: 0 0 8px rgba(var(--apex-danger-rgb), 0.3);
+    text-shadow: 0 0 5px rgba(var(--apex-danger-rgb), 0.8);
 }
 
 /* MEDIUM SCORE (5-7): Yellow Caution */
 .score-label.is-active[data-value="5"],
 .score-label.is-active[data-value="6"],
 .score-label.is-active[data-value="7"] {
-    border-color: #ffc107;
+    border-color: var(--apex-warning);
     color: #fff;
-    background: linear-gradient(180deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
-    box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
-    text-shadow: 0 0 5px rgba(255, 193, 7, 0.8);
+    background: linear-gradient(180deg, rgba(var(--apex-warning-rgb), 0.2) 0%, rgba(var(--apex-warning-rgb), 0.1) 100%);
+    box-shadow: 0 0 8px rgba(var(--apex-warning-rgb), 0.3);
+    text-shadow: 0 0 5px rgba(var(--apex-warning-rgb), 0.8);
 }
 
 /* =========================================
@@ -112,15 +112,14 @@
     align-items: center;
     justify-content: center;
     
-    /* HUD / Glass look */
-    background-color: #111;
-    border: 1px solid #333;
+    background-color: var(--apex-bg-dark);
+    border: 1px solid var(--apex-border);
     border-radius: 8px;
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
     
     cursor: pointer;
     position: relative;
-    min-height: 56px; /* Matches height of score bar */
+    min-height: 56px; 
     transition: all 0.3s ease;
 }
 
@@ -131,26 +130,24 @@
 
 /* Selected State */
 .mood-slot.has-mood {
-    border-color: var(--apex-primary, #0d6efd);
-    box-shadow: 0 0 15px rgba(13, 110, 253, 0.2), inset 0 0 10px rgba(13, 110, 253, 0.1);
+    border-color: var(--apex-primary);
+    box-shadow: 0 0 15px rgba(var(--apex-primary-rgb), 0.2), inset 0 0 10px rgba(var(--apex-primary-rgb), 0.1);
 }
 
-/* The actual emoji text input */
 .mood-input-styled {
     background: transparent !important;
     border: none !important;
     color: white !important;
     text-align: center;
-    font-size: 2.2rem; /* Large Emoji */
+    font-size: 2.2rem;
     width: 100%;
     height: 100%;
     cursor: pointer;
     padding: 0;
     outline: none !important;
-    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3)); /* Glow effect */
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
 }
 
-/* Tiny label in top-left corner ("MOOD") */
 .mood-label-text {
     position: absolute;
     top: 6px;
@@ -168,29 +165,22 @@
    ========================================= */
 
 #emoji-popover {
-    display: none; /* Toggled via JS */
-    
-    /* Anchoring */
+    display: none; 
     position: absolute; 
-    bottom: 100%; /* Sits exactly on top of the slot */
+    bottom: 100%; 
     right: 0;
     margin-bottom: 10px;
-    
-    /* Dimensions */
     width: 320px;
     height: 400px;
-    
-    /* Visuals */
     background-color: #1a1a1a;
     border: 1px solid #444;
     border-radius: 8px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-    
-    z-index: 9999; /* Ensure it floats above all other UI */
+    z-index: 9999;
     overflow: hidden;
 }
 
-/* Styling the 'emoji-picker-element' web component Shadow DOM variables */
+/* Shadow DOM variables for 'emoji-picker-element' */
 emoji-picker {
     width: 100%;
     height: 100%;
@@ -205,48 +195,31 @@ emoji-picker {
    4. FORM UTILITIES & HELPERS
    ========================================= */
 
-/* Prevent accidental form submission via Enter key */
+/* Hide submit buttons to enforce Auto-Save logic */
 #dayPageForm button[type="submit"],
 #dayPageForm input[type="submit"] { 
     display: none !important; 
 }
 
-/* Auto-save status alignment */
 .js-section-status { 
     min-width: 50px; 
     display: inline-block; 
     text-align: right; 
 }
 
-/* Small "ADD" text buttons */
-.btn-add-row {
-    font-size: 0.75rem !important;
-}
+.btn-add-row { font-size: 0.75rem !important; }
 
-/* Delete button styles */
+/* Interactive States */
 .btn-delete-row:hover {
     opacity: 1 !important;
-    color: #ff0000 !important;
+    color: var(--apex-danger) !important;
 }
 
-/* Faded delete button for empty form templates */
 .btn-delete-template {
     opacity: 0.6;
     transition: opacity 0.2s;
 }
+.btn-delete-template:hover { opacity: 1; }
 
-.btn-delete-template:hover {
-    opacity: 1;
-}
-
-/* --- TASK LIST HELPERS --- */
-
-/* Bold stroke for the "Add Task" plus icon */
-.task-add-btn-icon {
-    -webkit-text-stroke: 1px;
-}
-
-/* Interactive cursor for task titles */
-.task-title-interactive {
-    cursor: pointer;
-}
+.task-add-btn-icon { -webkit-text-stroke: 1px; }
+.task-title-interactive { cursor: pointer; }

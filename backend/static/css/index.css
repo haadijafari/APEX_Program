@@ -3,61 +3,36 @@
    DESCRIPTION: Styles specific to the Dashboard/Index page.
    ========================================================================== */
 
-/* 1. HABIT TRACKER INTERACTION
-   Visual cue for row/column highlighting when hovering over the calendar table.
-   Uses the primary system color with transparency. */
+/* 1. HABIT TRACKER INTERACTION */
 .habit-crosshair-active {
     background-color: rgba(var(--apex-primary-rgb), 0.25) !important;
     transition: background-color 0.1s ease;
 }
 
-/* 2. ACTION CARD
-   Styles for the "Today's Quest" call-to-action card. */
+/* 2. ACTION CARD */
 .action-card {
     border-width: 1px;
     box-shadow: 0 0 15px rgba(var(--apex-primary-rgb), 0.1);
 }
 
-/* 3. SYSTEM CALENDAR
-   Grid layout for the monthly log view. */
+/* 3. SYSTEM CALENDAR */
 .calendar-cell-wrapper {
     width: 14.28%; /* 100% / 7 days */
     height: 50px;
     padding: 2px;
 }
+.calendar-day-box { cursor: pointer; }
 
-.calendar-day-box {
-    cursor: pointer;
-}
+/* 4. PLAYER CARD */
+.player-xp-progress { height: 10px; }
 
-/* 4. PLAYER CARD
-   Profile stats and XP bar styles. */
-.player-xp-progress {
-    height: 10px;
-}
+/* 5. STATS RADAR */
+.stats-chart-canvas { max-height: 300px; }
 
-/* 5. STATS RADAR
-   Sizing constraints for the radar chart canvas. */
-.stats-chart-canvas {
-    max-height: 300px;
-}
+/* 6. HABIT TRACKER TABLE */
+.habit-header-title { min-width: 150px; }
+.habit-header-day { width: 28px; }
+.habit-cell-interactive { cursor: pointer; }
 
-/* 6. HABIT TRACKER TABLE
-   Column widths and interaction styles. */
-.habit-header-title {
-    min-width: 150px;
-}
-
-.habit-header-day {
-    width: 28px;
-}
-
-.habit-cell-interactive {
-    cursor: pointer;
-}
-
-/* 7. DASHBOARD CHARTS
-   Fixed height containers for the Sleep and Discipline charts. */
-.dashboard-chart-wrapper {
-    height: 250px;
-}
+/* 7. DASHBOARD CHARTS */
+.dashboard-chart-wrapper { height: 250px; }
