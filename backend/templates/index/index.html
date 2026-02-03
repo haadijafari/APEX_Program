@@ -41,20 +41,21 @@
 {% block extra_js %}
     <script src="{% static 'js/stats.js' %}"></script>
 
-<script>
-    window.apexPageData = {
-        habitTitlesData: {{ habit_titles_data|safe }},
-        csrfToken: '{{ csrf_token }}',
-        statLabels: {{ stat_labels|safe }},
-        statValues: {{ stat_values|safe }},
-        monthDays: {{ month_days|safe }},
-        sleepData: {{ sleep_data|safe }},
-        habitCountsData: {{ habit_counts_data|safe }},
-        totalActiveHabits: {{ total_active_habits|default:5 }}
-    };
-</script>
+    {{ habit_titles_data|json_script:"data-habit-titles" }}
+    {{ stat_labels|json_script:"data-stat-labels" }}
+    {{ stat_values|json_script:"data-stat-values" }}
+    {{ month_days|json_script:"data-month-days" }}
+    {{ sleep_data|json_script:"data-sleep-data" }}
+    {{ habit_counts_data|json_script:"data-habit-counts" }}
+    
+    <script id="data-config" type="application/json">
+        {
+            "csrfToken": "{{ csrf_token }}",
+            "totalActiveHabits": {{ total_active_habits|default:5 }}
+        }
+    </script>
 
-<script src="{% static 'js/index.js' %}"></script>
+    <script src="{% static 'js/index.js' %}"></script>
 {% endblock extra_js %}
 
 {% endblock content %}

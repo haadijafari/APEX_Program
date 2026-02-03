@@ -1,4 +1,3 @@
-/* backend/static/js/index.js */
 (function() {
     'use strict';
     
@@ -17,6 +16,44 @@
             });
             if (!response.ok) throw new Error('Habit toggle failed');
             return await response.json();
+        }
+    }
+
+    /**
+     * ==========================================
+     * DATA LOADER
+     * Safely parses JSON from DOM script tags.
+     * ==========================================
+     */
+    class DataLoader {
+        static getJSON(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                console.warn(`Data script tag #${id} not found`);
+                return null;
+            }
+            try {
+                return JSON.parse(element.textContent);
+            } catch (e) {
+                console.error(`Failed to parse JSON from #${id}`, e);
+                return null;
+            }
+        }
+
+        static loadPageData() {
+            // Reconstruct the config object expected by the application
+            const config = this.getJSON('data-config') || {};
+            
+            return {
+                habitTitlesData: this.getJSON('data-habit-titles') || [],
+                statLabels: this.getJSON('data-stat-labels') || [],
+                statValues: this.getJSON('data-stat-values') || [],
+                monthDays: this.getJSON('data-month-days') || [],
+                sleepData: this.getJSON('data-sleep-data') || [],
+                habitCountsData: this.getJSON('data-habit-counts') || [],
+                csrfToken: config.csrfToken,
+                totalActiveHabits: config.totalActiveHabits || 5
+            };
         }
     }
 
@@ -143,13 +180,15 @@
      * ==========================================
      */
     class HabitGrid {
-        constructor(chartManager) {
+        constructor(chartManager, pageData) {
             this.chartManager = chartManager;
-            this.config = window.apexPageData;
+            this.config = pageData;
             
             this.initCrosshair();
             
             // Export interaction handler for HTML onclicks
+            // Note: Ideally, this should also be converted to Event Delegation 
+            // similar to the Gate page refactor.
             window.toggleHabit = this.handleToggle.bind(this);
         }
 
@@ -222,9 +261,12 @@
 
     // Main Entry
     document.addEventListener('DOMContentLoaded', () => {
-        if (window.apexPageData) {
-            const charts = new DashboardCharts(window.apexPageData);
-            new HabitGrid(charts);
+        // Load data from DOM instead of global window object
+        const pageData = DataLoader.loadPageData();
+        
+        if (pageData && pageData.csrfToken) {
+            const charts = new DashboardCharts(pageData);
+            new HabitGrid(charts, pageData);
         }
     });
 
