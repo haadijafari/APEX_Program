@@ -48,20 +48,20 @@
    ========================================================================== */
 
 /* Text Colors */
-.text-system { color: var(--apex-primary) !important; }
+.text-system { color: var(--apex-primary); }
 
 /* Backgrounds */
 .bg-system { 
-    background-color: var(--apex-primary) !important; 
+    background-color: var(--apex-primary); 
     color: #fff; 
 }
 .bg-system-soft {
     /* Useful for active states/badges requiring transparency */
-    background-color: rgba(var(--apex-primary-rgb), 0.15) !important;
+    background-color: rgba(var(--apex-primary-rgb), 0.15);
 }
 
 /* Borders */
-.border-system { border-color: var(--apex-primary) !important; }
+.border-system { border-color: var(--apex-primary); }
 
 /* ==========================================================================
    COMPONENT STYLES
@@ -80,7 +80,7 @@
 
 /* 2. NAVBAR */
 .navbar {
-    background-color: var(--apex-bg-card) !important;
+    background-color: var(--apex-bg-card);
     border-bottom: 1px solid var(--apex-border);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
