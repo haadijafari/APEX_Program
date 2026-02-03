@@ -574,34 +574,59 @@
 
         appendTaskToUI(task) {
             if (!this.dom.listPending) return;
+
+            // 1. Get the Template
+            const template = document.getElementById('task-row-template');
+            if (!template) {
+                console.error("Task template not found");
+                return;
+            }
+
+            // 2. Clone the content
+            const clone = template.content.cloneNode(true);
+            const row = clone.querySelector('.task-item'); // Select the wrapper div
+
+            // 3. Populate Data
+            row.id = `task-row-${task.id}`;
+
+            // Checkbox
+            const checkbox = row.querySelector('.js-task-toggle');
+            checkbox.dataset.taskId = task.id;
+
+            // Title / Edit Container
+            const editGroup = row.querySelector('.js-task-edit');
+            editGroup.dataset.taskId = task.id;
+
+            // Title Text & Popover
+            const titleEl = row.querySelector('.task-title-text');
+            titleEl.textContent = task.title;
+            
+            if (task.description) {
+                // Set Bootstrap Popover attributes
+                titleEl.setAttribute('data-bs-toggle', 'popover');
+                titleEl.setAttribute('data-bs-trigger', 'hover');
+                titleEl.setAttribute('data-bs-html', 'true');
+                titleEl.setAttribute('data-bs-content', task.description);
+                titleEl.setAttribute('data-bs-placement', 'top');
+                
+                // Initialize the Popover immediately
+                new bootstrap.Popover(titleEl);
+            }
+
+            // Rank
+            const rankEl = row.querySelector('.task-rank-text');
+            rankEl.textContent = `${task.rank}-Rank`;
+
+            // Archive Button
+            const archiveBtn = row.querySelector('.js-task-archive');
+            archiveBtn.dataset.taskId = task.id;
+
+            // 4. Handle Empty State
             const emptyMsg = this.dom.listPending.querySelector('.empty-msg');
             if (emptyMsg) emptyMsg.remove();
 
-            const wrapper = document.createElement('div');
-            // Using a template literal for cleanliness
-            // Updated to use data attributes instead of onclick
-            wrapper.innerHTML = `
-                <div class="list-group-item d-flex justify-content-between align-items-center task-item" id="task-row-${task.id}">
-                    <div class="d-flex align-items-center">
-                        <input class="form-check-input me-2 js-task-toggle" type="checkbox" data-task-id="${task.id}">
-                        <div class="ms-2 task-title-interactive js-task-edit" data-task-id="${task.id}">
-                            <div class="fw-bold task-title">${task.title}</div>
-                            <small class="text-muted badge bg-dark">${task.rank}-Rank</small>
-                        </div>
-                    </div>
-                    <button class="btn btn-link text-danger p-0 delete-task-btn js-task-archive" data-task-id="${task.id}">
-                        <i class="bi bi-x"></i>
-                    </button>
-                </div>
-            `;
-            
-            const row = wrapper.firstElementChild;
-            if (task.description) {
-                new bootstrap.Popover(row.querySelector('.task-title'), {
-                    content: task.description, html: true, trigger: 'hover', placement: 'top'
-                });
-            }
-            this.dom.listPending.insertAdjacentElement('beforeend', row);
+            // 5. Append to List
+            this.dom.listPending.appendChild(row);
         }
     }
 
