@@ -1,4 +1,3 @@
-# backend/apps/gate/services/index.py
 from datetime import datetime, timedelta
 
 from django.shortcuts import get_object_or_404
@@ -13,7 +12,11 @@ def get_player_stats(user):
     """
     Fetches the user's profile and formats stats for the radar chart.
     """
-    profile, _ = PlayerProfile.objects.get_or_create(user=user)
+    try:
+        profile = PlayerProfile.objects.select_related("stats").get(user=user)
+    except PlayerProfile.DoesNotExist:
+        profile = PlayerProfile.objects.create(user=user)
+
     stats = getattr(profile, "stats", None)
 
     if stats:
@@ -35,18 +38,22 @@ def get_player_stats(user):
     }
 
 
-def get_sleep_data(user, month_info):
+def get_sleep_data(user, month_info, daily_entries=None):
     """
     Calculates sleep duration for every day in the current month.
     Returns a list of floats representing hours.
     """
     days_in_month = month_info["days_in_month"]
     j_month_start = month_info["j_month_start"]
-    g_start = month_info["g_start"]
-    g_end = month_info["g_end"]
+
+    if daily_entries is None:
+        g_start = month_info["g_start"]
+        g_end = month_info["g_end"]
+        daily_entries = DailyEntry.objects.filter(
+            user=user, date__range=[g_start, g_end]
+        )
 
     # Fetch entries in bulk
-    daily_entries = DailyEntry.objects.filter(user=user, date__range=[g_start, g_end])
     sleep_map = {dp.date: dp for dp in daily_entries}
 
     sleep_data = []
@@ -89,16 +96,23 @@ def get_habit_grid_context(user, profile, month_info):
     g_end = month_info["g_end"]
 
     # 1. Fetch Habits & Logs
-    habits = Task.objects.filter(
-        profile=profile,
-        is_active=True,
-        schedule__isnull=False,
-    ).select_related("schedule")
+    habits = list(
+        Task.objects.filter(
+            profile=profile,
+            is_active=True,
+            schedule__isnull=False,
+        )
+        .select_related("schedule")
+        .order_by("order", "created_at")
+    )
 
+    # Create a memory map {id: Task} to lookup titles later without a DB join
+    habit_map = {h.id: h for h in habits}
+    # Fetch Logs using the IDs we just got
     habit_logs = TaskLog.objects.filter(
-        task__in=habits,
+        task_id__in=habit_map.keys(),
         completed_at__date__range=[g_start, g_end],
-    ).select_related("task")
+    )
 
     # 2. Map Data
     habit_completion_map = set()
@@ -109,14 +123,18 @@ def get_habit_grid_context(user, profile, month_info):
         c_date = log.completed_at.date()
         c_date_str = c_date.strftime("%Y-%m-%d")
 
-        habit_completion_map.add((log.task.id, c_date_str))
+        habit_completion_map.add((log.task_id, c_date_str))
 
         daily_habit_counts_map[c_date_str] = (
             daily_habit_counts_map.get(c_date_str, 0) + 1
         )
-        if c_date_str not in daily_habit_titles_map:
-            daily_habit_titles_map[c_date_str] = []
-        daily_habit_titles_map[c_date_str].append(log.task.title)
+
+        # Memory Lookup: Get title from the pre-fetched task object
+        task = habit_map.get(log.task_id)
+        if task:
+            if c_date_str not in daily_habit_titles_map:
+                daily_habit_titles_map[c_date_str] = []
+            daily_habit_titles_map[c_date_str].append(task.title)
 
     # 3. Build Grid Rows
     habit_grid = []
@@ -171,7 +189,7 @@ def get_habit_grid_context(user, profile, month_info):
         "habit_grid": habit_grid,
         "habit_counts_data": habit_counts_data,
         "habit_titles_data": habit_titles_data,
-        "total_active_habits": habits.count(),
+        "total_active_habits": len(habits),
     }
 
 

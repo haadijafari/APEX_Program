@@ -37,19 +37,34 @@ def get_current_month_info():
     }
 
 
-def get_jalali_calendar_context(user):
+def get_jalali_calendar_context(user, month_info=None, daily_entries=None):
     """
     Generates the data structure for the Jalali calendar grid (Heatmap).
     Returns a dictionary ready to be merged into the view context.
     """
     # Reuse the central logic
-    month_info = get_current_month_info()
+    if not month_info:
+        month_info = get_current_month_info()
 
     j_today = month_info["j_today"]
     j_month_start = month_info["j_month_start"]
     days_in_month = month_info["days_in_month"]
 
     current_month_str = j_today.strftime("%B %Y")
+
+    # Create a set of dates where logs exist
+    if daily_entries is not None:
+        # Use the passed list
+        existing_entry_dates = {entry.date for entry in daily_entries}
+    else:
+        # Fallback if called standalone (shouldn't happen in view_index now)
+        g_start = month_info["g_start"]
+        g_end = month_info["g_end"]
+        existing_entry_dates = set(
+            DailyEntry.objects.filter(
+                user=user, date__range=[g_start, g_end]
+            ).values_list("date", flat=True)
+        )
 
     # Prepare the grid (Empty slots for start of week)
     # 0=Sat, 1=Sun, ..., 6=Fri
@@ -60,9 +75,8 @@ def get_jalali_calendar_context(user):
     for day in range(1, days_in_month + 1):
         date_obj = j_month_start + timedelta(days=day - 1)
 
-        # Check database for log (Heatmap logic)
-        g_date = date_obj.togregorian()
-        has_log = DailyEntry.objects.filter(user=user, date=g_date).exists()
+        # Check against the set (Memory lookup, no DB hit)
+        has_log = date_obj.togregorian() in existing_entry_dates
 
         calendar_days.append(
             {
@@ -80,7 +94,3 @@ def get_jalali_calendar_context(user):
         "current_month_str": current_month_str,
         "calendar_days": calendar_days,
     }
-
-
-# TODO: Occasions and holidays should be shown.
-# TODO: Add navigation for previous/next months.

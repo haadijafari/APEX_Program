@@ -25,17 +25,24 @@ class IndexView(LoginRequiredMixin, TemplateView):
 
         # 1. Calendar Setup
         month_info = calendar_service.get_current_month_info()
+        monthly_entries = list(
+            DailyEntry.objects.filter(
+                user=user, date__range=[month_info["g_start"], month_info["g_end"]]
+            )
+        )
 
         # 2. Service Calls
         player_context = index_service.get_player_stats(user)
-        sleep_data = index_service.get_sleep_data(user, month_info)
+        sleep_data = index_service.get_sleep_data(user, month_info, monthly_entries)
         habit_context = index_service.get_habit_grid_context(
             user, player_context["profile"], month_info
         )
-        calendar_data = calendar_service.get_jalali_calendar_context(user)
+        calendar_data = calendar_service.get_jalali_calendar_context(
+            user, month_info, monthly_entries
+        )
 
         # 3. Simple Streak Data
-        has_gate_log = DailyEntry.objects.filter(user=user, date=today).exists()
+        has_gate_log = any(e.date == today for e in monthly_entries)
         streak_count = DailyEntry.objects.filter(user=user).count()
 
         # 4. Merge Everything
