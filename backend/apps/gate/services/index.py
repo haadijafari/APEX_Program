@@ -74,10 +74,10 @@ def get_sleep_data(user, month_info, daily_entries=None):
 
                 if st > wt:
                     # Crossed midnight (e.g. 23:00 to 07:00)
-                    duration = (24.0 - sleep_hours) + wake_hours
+                    duration += (24.0 - sleep_hours) + wake_hours
                 else:
                     # Same day (e.g. 01:00 to 09:00)
-                    duration = wake_hours - sleep_hours
+                    duration += wake_hours - sleep_hours
 
         sleep_data.append(round(duration, 1))
 
