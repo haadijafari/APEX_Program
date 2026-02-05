@@ -259,7 +259,7 @@ TINYMCE_DEFAULT_CONFIG = {
 }
 
 # Caching
-if os.environ.get("DISABLE_CACHE"):
+if True if os.environ.get("DISABLE_CACHE") == "True" else False:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.dummy.DummyCache",

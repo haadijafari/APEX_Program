@@ -1,6 +1,8 @@
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 from apps.profiles.models import PlayerStats
 from apps.tasks.models import TaskLog
@@ -47,6 +49,12 @@ def handle_task_completion(sender, instance, created, **kwargs):
             award_stat_xp(stats, stat_key, xp_amount)
 
         stats.save()
+
+        # --- Invalidate Index Cache ---
+        user_id = instance.task.profile.user.id
+        today = timezone.now().date()
+        cache_key = f"gate_index_context_{user_id}_{today}"
+        cache.delete(cache_key)
 
 
 # Signal for UNDO action
@@ -95,6 +103,12 @@ def handle_task_undo(sender, instance, **kwargs):
             revoke_stat_xp(stats, stat_key, xp_amount)
 
         stats.save()
+
+        # --- Invalidate Index Cache ---
+        user_id = instance.task.profile.user.id
+        today = timezone.now().date()
+        cache_key = f"gate_index_context_{user_id}_{today}"
+        cache.delete(cache_key)
 
 
 def award_stat_xp(stats: PlayerStats, stat_key: str, amount: int):
