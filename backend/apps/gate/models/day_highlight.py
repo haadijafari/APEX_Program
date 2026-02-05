@@ -19,3 +19,6 @@ class DailyHighlight(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["entry", "category"]),
+        ]

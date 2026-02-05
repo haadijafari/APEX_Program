@@ -12,7 +12,9 @@ class TaskLog(models.Model):
     """
 
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="logs")
-    completed_at = models.DateTimeField(_("Completed At"), default=timezone.now)
+    completed_at = models.DateTimeField(
+        _("Completed At"), default=timezone.now, db_index=True
+    )
 
     # Snapshot of the reward at the moment of completion
     # (In case you change the Task rank later, history remains accurate)

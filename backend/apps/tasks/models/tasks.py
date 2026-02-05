@@ -131,6 +131,9 @@ class Task(models.Model):
         ordering = ["order", "created_at"]
         verbose_name = _("Task")
         verbose_name_plural = _("Tasks")
+        indexes = [
+            models.Index(fields=["profile", "is_active", "parent"]),
+        ]
 
     def __str__(self):
         prefix = "-- " if self.parent else ""

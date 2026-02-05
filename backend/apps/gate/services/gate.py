@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, time
 
 import jdatetime
 from django.db.models import Count
@@ -138,26 +138,50 @@ def get_tasks_context(user, today):
     Fetches tasks, splits them into Routines/Standalone,
     and identifies which are completed today.
     """
+    profile_id = user.profile.id
+
     # 1. Fetch Top-Level Tasks
     all_tasks = (
-        Task.objects.filter(profile__user=user, is_active=True, parent__isnull=True)
+        Task.objects.filter(profile_id=profile_id, is_active=True, parent__isnull=True)
         .prefetch_related("subtasks")
         .select_related("schedule")
-        .annotate(subtask_count=Count("subtasks"))
         .order_by("order", "created_at")
     )
 
     # 2. Split into Categories
-    # Routines: Tasks that are containers (have subtasks) AND have a schedule.
-    routines = [t for t in all_tasks if t.is_routine]
+    routines = []
+    standalone_tasks = []
 
-    # Standalone Tasks: One-time tasks only (No Schedule).
-    standalone_tasks = [t for t in all_tasks if not t.is_habit]
+    for t in all_tasks:
+        # Use the prefetched 'subtasks' list to check for children.
+        # Calling t.subtasks.count() or t.subtasks.exists() would hit the DB again.
+        # len(t.subtasks.all()) uses the python list cache.
+        has_subtasks = len(t.subtasks.all()) > 0
+
+        # 'schedule' is select_related, so accessing it is free (no DB hit)
+        has_schedule = hasattr(t, "schedule")
+
+        # Logic must match Task.is_routine property: Container + Schedule
+        is_routine = has_subtasks and has_schedule
+
+        # Logic must match Task.is_habit property: Has Schedule
+        is_habit = has_schedule
+
+        if is_routine:
+            # Routines: Tasks that are containers (have subtasks) AND have a schedule.
+            routines.append(t)
+        elif not is_habit:
+            # Standalone Tasks: One-time tasks only (No Schedule).
+            standalone_tasks.append(t)
 
     # 3. Fetch Completed Items for TODAY
+    # Use date range instead of __date cast to utilize DB Index on timestamp
+    start_of_day = timezone.make_aware(datetime.combine(today, time.min))
+    end_of_day = timezone.make_aware(datetime.combine(today, time.max))
+
     completed_today_ids = set(
         TaskLog.objects.filter(
-            task__profile__user=user, completed_at__date=today
+            task__profile_id=profile_id, completed_at__range=(start_of_day, end_of_day)
         ).values_list("task_id", flat=True)
     )
 
@@ -166,9 +190,15 @@ def get_tasks_context(user, today):
 
     # Get IDs of standalone tasks that have EVER been completed
     st_ids = [t.id for t in standalone_tasks]
-    ever_completed_ids = set(
-        TaskLog.objects.filter(task_id__in=st_ids).values_list("task_id", flat=True)
-    )
+    if st_ids:
+        # Use .distinct() to avoid fetching duplicate logs
+        ever_completed_ids = set(
+            TaskLog.objects.filter(task_id__in=st_ids)
+            .values_list("task_id", flat=True)
+            .distinct()
+        )
+    else:
+        ever_completed_ids = set()
 
     pending_tasks = []
     done_tasks = []
@@ -257,10 +287,15 @@ def toggle_task_completion(user, task_id):
     Toggles a Task's completion for today.
     Returns the new status ('added' or 'removed').
     """
-    task = get_object_or_404(Task, id=task_id, profile__user=user)
+    task = get_object_or_404(Task, id=task_id, profile_id=user.profile.id)
     today = timezone.now().date()
 
-    logs = TaskLog.objects.filter(task=task, completed_at__date=today)
+    start_of_day = timezone.make_aware(datetime.combine(today, time.min))
+    end_of_day = timezone.make_aware(datetime.combine(today, time.max))
+
+    logs = TaskLog.objects.filter(
+        task=task, completed_at__range=(start_of_day, end_of_day)
+    )
 
     if logs.exists():
         logs.delete()
