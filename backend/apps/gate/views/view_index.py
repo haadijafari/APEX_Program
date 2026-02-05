@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -23,6 +24,16 @@ class IndexView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         today = timezone.now().date()
 
+        # --- CACHE
+        cache_key = f"gate_index_context_{user.id}_{today}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            # If cache hit, return it immediately
+            context.update(cached_data)
+            return context
+
+        # --- IF CACHE MISS, CALCULATE EVERYTHING
         # 1. Calendar Setup
         month_info = calendar_service.get_current_month_info()
         monthly_entries = list(
@@ -46,21 +57,23 @@ class IndexView(LoginRequiredMixin, TemplateView):
         streak_count = DailyEntry.objects.filter(user=user).count()
 
         # 4. Merge Everything
-        context.update(
-            {
-                "today": today,
-                "has_gate_log": has_gate_log,
-                "streak": streak_count,
-                "month_days": month_info["month_days"],
-                "current_month_name": month_info["j_today"].strftime("%B"),
-                "current_day_number": month_info["j_today"].day,
-                "sleep_data": sleep_data,
-                **player_context,
-                **habit_context,
-                **calendar_data,
-            }
-        )
+        data_to_cache = {
+            "today": today,
+            "has_gate_log": has_gate_log,
+            "streak": streak_count,
+            "month_days": month_info["month_days"],
+            "current_month_name": month_info["j_today"].strftime("%B"),
+            "current_day_number": month_info["j_today"].day,
+            "sleep_data": sleep_data,
+            **player_context,
+            **habit_context,
+            **calendar_data,
+        }
 
+        # Store in cache for 15 minutes (900 seconds)
+        cache.set(cache_key, data_to_cache, 900)
+
+        context.update(data_to_cache)
         return context
 
 
@@ -72,9 +85,17 @@ def toggle_habit_log(request, task_id, date_str):
     """
     try:
         data = index_service.perform_habit_toggle(request.user, task_id, date_str)
+
+        # Invalidate the cache when data changes!
+        today = timezone.now().date()
+        cache_key = f"gate_index_context_{request.user.id}_{today}"
+        cache.delete(cache_key)
+
         return JsonResponse(data)
+
     except ValueError as e:
         return JsonResponse({"error": str(e)}, status=400)
+
     except Exception as e:
         # Generic catch for unexpected errors
         return JsonResponse(

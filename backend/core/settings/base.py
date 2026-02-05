@@ -257,3 +257,22 @@ TINYMCE_DEFAULT_CONFIG = {
     "browser_spellcheck": True,
     "contextmenu": False,
 }
+
+# Caching
+if os.environ.get("DISABLE_CACHE"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            # "LOCATION": "redis://redis:6379/1",  # uncomment for docker
+            "LOCATION": "redis://127.0.0.1:6379/1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
