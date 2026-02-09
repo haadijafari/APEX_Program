@@ -21,7 +21,6 @@ RUN uv sync
 
 # Copy project files
 COPY backend/ ./
-COPY .env ./
 COPY backend/entrypoint.sh ./
 
 # Expose the Django port

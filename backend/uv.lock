@@ -11,7 +11,6 @@ dependencies = [
     { name = "django-cors-headers" },
     { name = "django-csp" },
     { name = "django-filter" },
-    { name = "django-multi-captcha-admin" },
     { name = "django-recaptcha" },
     { name = "django-redis" },
     { name = "django-robots" },
@@ -43,7 +42,6 @@ requires-dist = [
     { name = "django-cors-headers", specifier = ">=4.7.0" },
     { name = "django-csp", specifier = ">=4.0" },
     { name = "django-filter", specifier = ">=25.1" },
-    { name = "django-multi-captcha-admin", specifier = ">=2.0.0" },
     { name = "django-recaptcha", specifier = "==3.0.0" },
     { name = "django-redis", specifier = ">=6.0.0" },
     { name = "django-robots", specifier = ">=6.1" },
@@ -198,15 +196,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/b5/40/c702a6fe8cccac9bf
 wheels = [
     { url = "https://files.pythonhosted.org/packages/07/a6/70dcd68537c434ba7cb9277d403c5c829caf04f35baf5eb9458be251e382/django_filter-25.1-py3-none-any.whl", hash = "sha256:4fa48677cf5857b9b1347fed23e355ea792464e0fe07244d1fdfb8a806215b80", size = 94114, upload-time = "2025-02-14T16:30:50.435Z" },
 ]
-
-[[package]]
-name = "django-multi-captcha-admin"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/26/8918427cac555f179ae1441ecf7a1fc3db8c1d2a8c72d7afbde41f6ee52b/django-multi-captcha-admin-2.0.0.tar.gz", hash = "sha256:cf579d741ac120fb3ec9d6cdcd67f9ff91356f92a59f9ad084abc22ca9a30d9b", size = 4858, upload-time = "2021-11-30T19:57:21.482Z" }
 
 [[package]]
 name = "django-recaptcha"
