@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import HiddenInput, TextInput, inlineformset_factory
+from tinymce.widgets import TinyMCE
 
 from apps.gate.models import DailyEntry, DailyHighlight
 
@@ -60,11 +61,15 @@ class DailyEntryForm(forms.ModelForm):
                     "rows": 2,
                 }
             ),
-            "diary": forms.Textarea(
+            "diary": TinyMCE(
                 attrs={
                     "class": "form-control bg-dark text-white border-secondary",
-                    "rows": 3,
-                }
+                    "rows": 15,
+                },
+                mce_attrs={
+                    "height": 700,
+                    "width": "100%",
+                },
             ),
             "financial_notes": forms.Textarea(
                 attrs={

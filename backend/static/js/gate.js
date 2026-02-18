@@ -177,6 +177,7 @@
             this.debouncedSave = this.debounce((statusEl) => this.performSave(statusEl), 1000);
             
             this.initAutoSave();
+            this.initTinyMCE();
             this.initEmojiPicker();
             this.initScoreBar();
             this.initDynamicRows();
@@ -211,7 +212,34 @@
             });
         }
 
+        initTinyMCE() {
+            // Check periodically if TinyMCE is initialized on the diary field
+            const checkInterval = setInterval(() => {
+                // 'id_diary' is the default ID Django gives to the field
+                if (window.tinymce && window.tinymce.get('id_diary')) {
+                    clearInterval(checkInterval);
+                    const editor = window.tinymce.get('id_diary');
+
+                    // Listen for typing or changes in the editor
+                    editor.on('input change keyup', () => {
+                        // Find the status element for the Diary section
+                        // (We look for the closest section to the original textarea)
+                        const textarea = document.getElementById('id_diary');
+                        const statusEl = textarea.closest('.js-autosave-section')?.querySelector('.js-section-status');
+                        
+                        // Trigger the standard debounced save
+                        this.debouncedSave(statusEl);
+                    });
+                }
+            }, 500);
+        }
+
         async performSave(statusEl) {
+            // Ensure the underlying textarea is updated with the editor content
+            if (window.tinymce) {
+                window.tinymce.triggerSave();
+            }
+            
             if (this.state.isSaving) {
                 this.state.pendingSave = true;
                 if (statusEl) this.state.pendingStatusEl = statusEl;

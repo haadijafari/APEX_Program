@@ -42,6 +42,10 @@
 </script>
 
 <script type="module" src="{% static 'vendor/emoji-picker/index.js' %}"></script>
-{{ task_form.media.js }} {# For TinyMCE #}
+
+{# For TinyMCE #}
+{{ form.media.js }}
+{{ task_form.media.js }}
+
 <script src="{% static 'js/gate.js' %}"></script>
 {% endblock extra_js %}
