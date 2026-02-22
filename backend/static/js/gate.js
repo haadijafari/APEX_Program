@@ -77,7 +77,14 @@
         }
 
         static toggleTaskStatus(taskId) {
-            return this.request(this.getUrl('taskToggle', taskId), 'POST');
+            const body = new FormData();
+            
+            // Check if we are viewing a specific date and append it
+            if (this.config.targetDate) {
+                body.append('target_date', this.config.targetDate);
+            }
+            
+            return this.request(this.getUrl('taskToggle', taskId), 'POST', body);
         }
 
         static createTask(formData) {
@@ -685,6 +692,45 @@
 
     /**
      * ==========================================
+     * MODULE: ROUTINE MANAGER
+     * Handles toggling for routine subtasks.
+     * ==========================================
+     */
+    class RoutineManager {
+        constructor() {
+            this.initListeners();
+        }
+
+        initListeners() {
+            // Listen for changes on any element with the js-routine-toggle class
+            document.addEventListener('change', (e) => {
+                if (e.target.classList.contains('js-routine-toggle')) {
+                    // Fallback to extracting ID from 'task-123' if data-task-id is missing
+                    const taskId = e.target.dataset.taskId || e.target.id.replace('task-', '');
+                    
+                    if (!taskId || taskId === 'undefined') {
+                        console.error("Could not determine task ID for:", e.target);
+                        return;
+                    }
+
+                    this.handleToggle(taskId, e.target);
+                }
+            });
+        }
+
+        async handleToggle(taskId, checkboxEl) {
+            try {
+                await GateAPI.toggleTaskStatus(taskId);
+            } catch (err) {
+                // Revert checkbox visual state on failure
+                checkboxEl.checked = !checkboxEl.checked;
+                console.error("Routine toggle failed", err);
+            }
+        }
+    }
+
+    /**
+     * ==========================================
      * INITIALIZATION
      * ==========================================
      */
@@ -699,6 +745,7 @@
         new SleepModule();
         new DailyLogForm('dayPageForm');
         new TaskManager(); // Logic is now self-contained
+        new RoutineManager();
     });
 
 })();

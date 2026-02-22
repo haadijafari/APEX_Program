@@ -71,7 +71,8 @@ def toggle_task_log(request, task_id):
     """
     AJAX Endpoint: Toggles a Task's completion for today.
     """
-    status = gate_service.toggle_task_completion(request.user, task_id)
+    target_date_str = request.POST.get("target_date")
+    status = gate_service.toggle_task_completion(request.user, task_id, target_date_str)
     return JsonResponse({"status": status, "task_id": task_id})
 
 

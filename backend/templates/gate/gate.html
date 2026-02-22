@@ -37,7 +37,8 @@
         "taskToggle": "{% url 'gate:toggle_task_log' 0 %}",
         "taskDetails": "{% url 'gate:task_details' 0 %}",
         "taskUpdate": "{% url 'gate:update_task' 0 %}",
-        "taskArchive": "{% url 'gate:archive_task' 0 %}"
+        "taskArchive": "{% url 'gate:archive_task' 0 %}",
+        "targetDate": "{{ today|date:'Y-m-d' }}"
     }
 </script>
 

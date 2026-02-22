@@ -9,14 +9,12 @@
             {# Iterate over 'subtasks' (Related Name in Task model) #}
             {% for subtask in routine.subtasks.all %}
                 <li class="list-group-item d-flex align-items-center">
-                    <input class="form-check-input me-2" 
-                           type="checkbox" 
-                           value="" 
-                           id="task-{{ subtask.id }}"
-                           {# Check against the set of IDs passed from view #}
-                           {% if subtask.id in completed_task_ids %}checked{% endif %}
-                           {# Ensure your JS has a function for this, or use the generic toggle #}
-                           onclick="toggleTask({{ subtask.id }})">
+                    <input class="form-check-input me-2 js-routine-toggle" 
+                        type="checkbox" 
+                        value="" 
+                        id="task-{{ subtask.id }}"
+                        data-task-id="{{ subtask.id }}"
+                        {% if subtask.id in completed_task_ids %}checked{% endif %}>
                     
                     <label class="form-check-label stretched-link text-reset" for="task-{{ subtask.id }}">
                         {{ subtask.title }}

@@ -281,16 +281,24 @@ def _save_highlight_formset(formset, category):
     return saved_map
 
 
-def toggle_task_completion(user, task_id):
+def toggle_task_completion(user, task_id, target_date_str=None):
     """
     Toggles a Task's completion for today.
     Returns the new status ('added' or 'removed').
     """
     task = get_object_or_404(Task, id=task_id, profile_id=user.profile.id)
-    today = timezone.now().date()
+    ttarget_date = timezone.now().date()
 
-    start_of_day = timezone.make_aware(datetime.combine(today, time.min))
-    end_of_day = timezone.make_aware(datetime.combine(today, time.max))
+    # Parse the requested date if provided
+    if target_date_str:
+        try:
+            target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            pass
+
+    # 2. Define the boundaries for the target date
+    start_of_day = timezone.make_aware(datetime.combine(target_date, time.min))
+    end_of_day = timezone.make_aware(datetime.combine(target_date, time.max))
 
     logs = TaskLog.objects.filter(
         task=task, completed_at__range=(start_of_day, end_of_day)
@@ -300,5 +308,13 @@ def toggle_task_completion(user, task_id):
         logs.delete()
         return "removed"
     else:
-        TaskLog.objects.create(task=task, completed_at=timezone.now())
+        # Create log at current time if today, else midday of the target date
+        if target_date == timezone.now().date():
+            completed_at = timezone.now()
+        else:
+            completed_at = timezone.make_aware(
+                datetime.combine(target_date, time(12, 0))
+            )
+
+        TaskLog.objects.create(task=task, completed_at=completed_at)
         return "added"
